@@ -111,6 +111,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>E:\Visual Studio Projects\CPP-3D-Game-Tutorial-Series-master\GDENG03-Engine\DX3D\Include\DX3D\Graphics\Particles;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -140,6 +141,12 @@
     <ClCompile Include="DX3D\Source\DX3D\Core\Base.cpp" />
     <ClCompile Include="DX3D\Source\DX3D\Game\Game.cpp" />
     <ClCompile Include="DX3D\Source\DX3D\Game\Win32\Win32Game.cpp" />
+    <ClCompile Include="DX3D\Source\DX3D\Graphics\Particles\ElectricSparkParticle.cpp" />
+    <ClCompile Include="DX3D\Source\DX3D\Graphics\Particles\FireParticle.cpp" />
+    <ClCompile Include="DX3D\Source\DX3D\Graphics\Particles\Particle.cpp" />
+    <ClCompile Include="DX3D\Source\DX3D\Graphics\Particles\ParticleEmitter.cpp" />
+    <ClCompile Include="DX3D\Source\DX3D\Graphics\Particles\ParticleSystem.cpp" />
+    <ClCompile Include="DX3D\Source\DX3D\Graphics\Particles\ShootingStarParticle.cpp" />
     <ClCompile Include="Game\main.cpp" />
     <ClCompile Include="DX3D\Source\DX3D\Window\Win32\Win32Window.cpp" />
     <ClCompile Include="DX3D\Source\DX3D\Graphics\GraphicsEngine.cpp" />
@@ -152,6 +159,12 @@
     <ClCompile Include="DX3D\Source\DX3D\Graphics\Primitives\Rectangle.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DX3D\Include\DX3D\Graphics\Particles\ElectricSparkParticle.h" />
+    <ClInclude Include="DX3D\Include\DX3D\Graphics\Particles\FireParticle.h" />
+    <ClInclude Include="DX3D\Include\DX3D\Graphics\Particles\ParticleEmitter.h" />
+    <ClInclude Include="DX3D\Include\DX3D\Graphics\Particles\Particles.h" />
+    <ClInclude Include="DX3D\Include\DX3D\Graphics\Particles\ParticleSystem.h" />
+    <ClInclude Include="DX3D\Include\DX3D\Graphics\Particles\ShootingStarParticle.h" />
     <ClInclude Include="DX3D\Include\DX3D\Graphics\Shaders\ColorShader.h" />
     <ClInclude Include="DX3D\Include\DX3D\Graphics\DeviceContext.h" />
     <ClInclude Include="DX3D\Include\DX3D\Game\Display.h" />
@@ -160,11 +173,13 @@
     <ClInclude Include="DX3D\Include\DX3D\Core\Common.h" />
     <ClInclude Include="DX3D\Include\DX3D\Core\Core.h" />
     <ClInclude Include="DX3D\Include\DX3D\Graphics\Shaders\GreenShader.h" />
+    <ClInclude Include="DX3D\Include\DX3D\Graphics\Shaders\ParticleShader.h" />
     <ClInclude Include="DX3D\Include\DX3D\Graphics\Shaders\RainbowShader.h" />
     <ClInclude Include="DX3D\Include\DX3D\Graphics\Shaders\SimpleBlendedShader.h" />
     <ClInclude Include="DX3D\Include\DX3D\Graphics\Shaders\TransitionShader.h" />
     <ClInclude Include="DX3D\Include\DX3D\Graphics\Vertex.h" />
     <ClInclude Include="DX3D\Include\DX3D\Math\Rect.h" />
+    <ClInclude Include="DX3D\Include\DX3D\Math\Vec2.h" />
     <ClInclude Include="DX3D\Include\DX3D\Window\Window.h" />
     <ClInclude Include="DX3D\Include\DX3D\Game\Game.h" />
     <ClInclude Include="DX3D\Include\DX3D\Graphics\GraphicsEngine.h" />

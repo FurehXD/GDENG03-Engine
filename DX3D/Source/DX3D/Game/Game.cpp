@@ -8,7 +8,15 @@
 #include <DX3D/Graphics/DeviceContext.h>
 #include <DX3D/Graphics/Primitives/Rectangle.h>
 #include <DX3D/Graphics/Shaders/TransitionShader.h>
+
+// Particle system includes
+#include <DX3D/Graphics/Particles/ParticleSystem.h>
+#include <DX3D/Graphics/Particles/FireParticle.h>
+#include <DX3D/Graphics/Particles/ShootingStarParticle.h>
+#include <DX3D/Graphics/Particles/ElectricSparkParticle.h>
+
 #include <cmath>
+#include <random>
 
 dx3d::Game::Game(const GameDesc& desc) :
     Base({ *std::make_unique<Logger>(desc.logLevel).release() }),
@@ -21,8 +29,9 @@ dx3d::Game::Game(const GameDesc& desc) :
     m_startTime = std::chrono::steady_clock::now();
 
     createRenderingResources();
+    initializeParticles();
 
-    DX3DLogInfo("Game initialized with rectangle to parallelogram morphing animation.");
+    DX3DLogInfo("Game initialized with particle systems.");
 }
 
 dx3d::Game::~Game()
@@ -37,14 +46,45 @@ void dx3d::Game::createRenderingResources()
 
     m_rectangles.clear();
 
-    // Create initial rectangle
-    m_rectangles.push_back(Rectangle::CreateAt(resourceDesc, 0.0f, 0.0f, 0.6f, 0.8f));
+    // Create initial rectangle (commented out for now)
+    // m_rectangles.push_back(Rectangle::CreateAt(resourceDesc, 0.0f, 0.0f, 0.6f, 0.8f));
 
     // Create transition shader that handles the color blending internally
     m_transitionVertexShader = std::make_shared<VertexShader>(resourceDesc, TransitionShader::GetVertexShaderCode());
     m_transitionPixelShader = std::make_shared<PixelShader>(resourceDesc, TransitionShader::GetPixelShaderCode());
 
-    DX3DLogInfo("Rectangle morphing animation resources created successfully.");
+    DX3DLogInfo("Rendering resources created successfully.");
+}
+
+void dx3d::Game::initializeParticles()
+{
+    auto& renderSystem = m_graphicsEngine->getRenderSystem();
+    auto resourceDesc = renderSystem.getGraphicsResourceDesc();
+
+    // Create particle system
+    m_particleSystem = std::make_unique<ParticleSystem>(resourceDesc);
+
+    // Create fire emitter at left side
+    m_fireEmitter = std::make_shared<FireEmitter>(200);
+    m_fireEmitter->setPosition(Vec2(-0.6f, -0.7f));
+    m_fireEmitter->setFlameHeight(0.5f);
+    m_fireEmitter->setFlameWidth(0.25f);
+    m_fireEmitter->setIntensity(1.0f);
+    m_particleSystem->addEmitter(m_fireEmitter);
+
+    // Create shooting star emitter (will launch from top)
+    m_shootingStarEmitter = std::make_shared<ShootingStarEmitter>(100);
+    m_particleSystem->addEmitter(m_shootingStarEmitter);
+
+    // Create electric spark emitter at right side
+    m_electricSparkEmitter = std::make_shared<ElectricSparkEmitter>(150);
+    m_electricSparkEmitter->setPosition(Vec2(0.6f, 0.0f));
+    m_electricSparkEmitter->setSparkRadius(0.15f);
+    m_electricSparkEmitter->setContinuous(true);  // Continuous sparking
+    m_electricSparkEmitter->setSparkIntensity(0.8f);
+    m_particleSystem->addEmitter(m_electricSparkEmitter);
+
+    DX3DLogInfo("Particle systems initialized.");
 }
 
 float dx3d::Game::lerp(float a, float b, float t)
@@ -60,6 +100,8 @@ float dx3d::Game::smoothstep(float t)
 
 void dx3d::Game::updateAnimation()
 {
+    // Animation code commented out for now
+    /*
     auto currentTime = std::chrono::steady_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - m_startTime);
     m_animationTime = elapsed.count() / 1000.0f;
@@ -92,6 +134,7 @@ void dx3d::Game::updateAnimation()
     m_currentHeight = 0.8f;
 
     updateRectangleVertices(skewAmount);
+    */
 }
 
 void dx3d::Game::updateRectangleVertices()
@@ -102,6 +145,8 @@ void dx3d::Game::updateRectangleVertices()
 
 void dx3d::Game::updateRectangleVertices(float skewAmount)
 {
+    // Rectangle update code commented out for now
+    /*
     auto& renderSystem = m_graphicsEngine->getRenderSystem();
     auto resourceDesc = renderSystem.getGraphicsResourceDesc();
 
@@ -134,12 +179,96 @@ void dx3d::Game::updateRectangleVertices(float skewAmount)
             resourceDesc
         )
     );
+    */
+}
+
+void dx3d::Game::updateParticles(float deltaTime)
+{
+    // Update demo timer
+    m_demoTimer += deltaTime;
+
+    // Launch shooting stars periodically
+    static float starTimer = 0.0f;
+    starTimer += deltaTime;
+    if (starTimer > 3.0f)  // Every 3 seconds
+    {
+        starTimer = 0.0f;
+
+        // Random number generation
+        static std::mt19937 gen(std::random_device{}());
+        std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
+
+        // Random start position at top of screen
+        float startX = dist(gen) * 0.8f;
+        Vec2 startPos(startX, 0.9f);
+
+        // Aim downward with some angle
+        float angleOffset = dist(gen) * 0.3f;
+        Vec2 direction(angleOffset, -1.0f);
+
+        m_shootingStarEmitter->launchStar(startPos, direction, 1.5f);
+
+        DX3DLogInfo("Launched shooting star");
+    }
+
+    // Create occasional electric spark bursts (in addition to continuous)
+    static float sparkBurstTimer = 0.0f;
+    sparkBurstTimer += deltaTime;
+    if (sparkBurstTimer > 1.5f)
+    {
+        sparkBurstTimer = 0.0f;
+
+        // Random number generation
+        static std::mt19937 gen(std::random_device{}());
+        std::uniform_real_distribution<float> distX(-0.3f, 0.3f);
+        std::uniform_real_distribution<float> distY(-0.4f, 0.4f);
+
+        // Big spark burst at center area
+        float x = distX(gen);
+        float y = distY(gen);
+        m_electricSparkEmitter->spark(Vec2(x, y), 2.0f);  // High intensity burst
+    }
+
+    // Update particle system
+    m_particleSystem->update(deltaTime);
+
+    // Debug: Log particle counts
+    static float debugTimer = 0.0f;
+    debugTimer += deltaTime;
+    if (debugTimer > 1.0f) // Every second
+    {
+        debugTimer = 0.0f;
+        int fireCount = 0, starCount = 0, sparkCount = 0;
+
+        if (m_fireEmitter)
+            fireCount = static_cast<int>(m_fireEmitter->getParticles().size());
+        if (m_shootingStarEmitter)
+            starCount = static_cast<int>(m_shootingStarEmitter->getParticles().size());
+        if (m_electricSparkEmitter)
+            sparkCount = static_cast<int>(m_electricSparkEmitter->getParticles().size());
+
+        char debugMsg[256];
+        sprintf_s(debugMsg, "Active particles - Fire: %d, Stars: %d, Sparks: %d",
+            fireCount, starCount, sparkCount);
+        DX3DLogInfo(debugMsg);
+    }
 }
 
 void dx3d::Game::render()
 {
-    // Update animation before rendering
-    updateAnimation();
+    // Calculate delta time
+    auto currentTime = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - m_startTime);
+    static auto lastTime = elapsed.count();
+    auto currentTimeMs = elapsed.count();
+    float deltaTime = (currentTimeMs - lastTime) / 1000.0f;
+    lastTime = currentTimeMs;
+
+    // Clamp delta time to prevent large jumps
+    deltaTime = std::min(deltaTime, 0.033f); // Cap at ~30 FPS minimum
+
+    // Update animation before rendering (commented out)
+    // updateAnimation();
 
     auto& renderSystem = m_graphicsEngine->getRenderSystem();
     auto& deviceContext = renderSystem.getDeviceContext();
@@ -150,7 +279,8 @@ void dx3d::Game::render()
     deviceContext.setRenderTargets(swapChain);
     deviceContext.setViewportSize(m_display->getSize().width, m_display->getSize().height);
 
-    // Render the morphing rectangle with smooth color transition
+    // Render the morphing rectangle with smooth color transition (commented out)
+    /*
     if (!m_rectangles.empty())
     {
         deviceContext.setVertexBuffer(*m_rectangles[0]);
@@ -162,6 +292,11 @@ void dx3d::Game::render()
 
         deviceContext.drawTriangleStrip(m_rectangles[0]->getVertexCount(), 0);
     }
+    */
+
+    // Update and render particles
+    updateParticles(deltaTime);
+    m_particleSystem->render(deviceContext);
 
     deviceContext.present(swapChain);
 }

@@ -13,7 +13,6 @@ ParticleEmitter::ParticleEmitter(size_t maxParticles)
 
 void ParticleEmitter::update(float deltaTime)
 {
-    // Update all particles
     for (auto& particle : m_particles)
     {
         if (particle && particle->isActive())
@@ -22,7 +21,6 @@ void ParticleEmitter::update(float deltaTime)
         }
     }
 
-    // Remove dead particles
     m_particles.erase(
         std::remove_if(m_particles.begin(), m_particles.end(),
             [](const std::unique_ptr<Particle>& p) {

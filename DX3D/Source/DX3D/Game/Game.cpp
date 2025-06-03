@@ -267,34 +267,14 @@ void dx3d::Game::render()
     // Clamp delta time to prevent large jumps
     deltaTime = std::min(deltaTime, 0.033f); // Cap at ~30 FPS minimum
 
-    // Update animation before rendering (commented out)
-    // updateAnimation();
-
     auto& renderSystem = m_graphicsEngine->getRenderSystem();
     auto& deviceContext = renderSystem.getDeviceContext();
     auto& swapChain = m_display->getSwapChain();
 
-    // Clear screen to black
-    deviceContext.clearRenderTargetColor(swapChain, 0.0f, 0.0f, 1.0f, 1.0f);
+    deviceContext.clearRenderTargetColor(swapChain, 0.0f, 0.0f, 0.0f, 1.0f);
     deviceContext.setRenderTargets(swapChain);
     deviceContext.setViewportSize(m_display->getSize().width, m_display->getSize().height);
 
-    // Render the morphing rectangle with smooth color transition (commented out)
-    /*
-    if (!m_rectangles.empty())
-    {
-        deviceContext.setVertexBuffer(*m_rectangles[0]);
-
-        // Use the transition shader that handles color blending internally
-        deviceContext.setVertexShader(m_transitionVertexShader->getShader());
-        deviceContext.setPixelShader(m_transitionPixelShader->getShader());
-        deviceContext.setInputLayout(m_transitionVertexShader->getInputLayout());
-
-        deviceContext.drawTriangleStrip(m_rectangles[0]->getVertexCount(), 0);
-    }
-    */
-
-    // Update and render particles
     updateParticles(deltaTime);
     m_particleSystem->render(deviceContext);
 

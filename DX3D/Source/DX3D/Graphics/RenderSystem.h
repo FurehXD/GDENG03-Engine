@@ -36,5 +36,6 @@ namespace dx3d
         Microsoft::WRL::ComPtr<IDXGIAdapter> m_dxgiAdapter{};
         Microsoft::WRL::ComPtr<IDXGIFactory> m_dxgiFactory{};
         DeviceContextPtr m_deviceContextPtr{};
+        Microsoft::WRL::ComPtr<ID3D11RasterizerState> m_rasterState{}; // New: Rasterizer state
     };
 }

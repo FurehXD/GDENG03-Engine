@@ -30,6 +30,18 @@ dx3d::RenderSystem::RenderSystem(const RenderSystemDesc& desc) : Base(desc.base)
     DX3DGraphicsLogErrorAndThrow(m_dxgiAdapter->GetParent(IID_PPV_ARGS(&m_dxgiFactory)),
         "GetParent failed to retrieve IDXGIFactory.");
 
+    // New: Configure and set the rasterizer state
+    D3D11_RASTERIZER_DESC rasterDesc{};
+    rasterDesc.FillMode = D3D11_FILL_SOLID;
+    rasterDesc.CullMode = D3D11_CULL_BACK; // Still cull back faces
+    rasterDesc.FrontCounterClockwise = TRUE; // Set front faces to be CCW to match your vertex winding
+
+    DX3DGraphicsLogErrorAndThrow(m_d3dDevice->CreateRasterizerState(&rasterDesc, &m_rasterState),
+        "Failed to create rasterizer state.");
+
+    // Set the created rasterizer state to the device context
+    m_d3dContext->RSSetState(m_rasterState.Get());
+
     initializeDeviceContext();
 }
 

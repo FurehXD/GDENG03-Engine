@@ -24,6 +24,23 @@ ParticleSystem::ParticleSystem(const GraphicsResourceDesc& resourceDesc)
         ParticleShader::GetPixelShaderCode()
     );
 
+    // New: Create and configure alpha blend state for particles
+    D3D11_BLEND_DESC blendDesc{};
+    blendDesc.AlphaToCoverageEnable = FALSE;
+    blendDesc.IndependentBlendEnable = FALSE;
+
+    blendDesc.RenderTarget[0].BlendEnable = TRUE; // Enable blending for the first render target
+    blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA; // Source blend factor: (As, As, As, As)
+    blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA; // Destination blend factor: (1-As, 1-As, 1-As, 1-As)
+    blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD; // Add source and destination
+    blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE; // Source alpha blend factor
+    blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO; // Destination alpha blend factor (keep existing alpha)
+    blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD; // Add alpha
+    blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL; // Write all color channels
+
+    DX3DGraphicsLogErrorAndThrow(m_resourceDesc.device.CreateBlendState(&blendDesc, &m_alphaBlendState),
+        "Failed to create alpha blend state for particles.");
+
     // Create initial vertex buffer
     m_vertexBuffer = createParticleVertexBuffer();
 }
@@ -47,7 +64,7 @@ void ParticleSystem::update(float deltaTime)
 
 void ParticleSystem::render(DeviceContext& deviceContext)
 {
-    // Clear vertex data
+    // Clear vertex data from the previous frame
     m_vertices.clear();
 
     // Collect vertices from all particles in all emitters
@@ -67,6 +84,8 @@ void ParticleSystem::render(DeviceContext& deviceContext)
             Vec2 pos = particle->getPosition();
             float size = particle->getSize();
             Vec4 color = particle->getColor();
+            // The alpha channel is already handled by Particle::update and the ParticleShader,
+            // so we keep it as is.
             float rotation = particle->getRotation();
 
             // Create a quad using two triangles
@@ -125,6 +144,9 @@ void ParticleSystem::render(DeviceContext& deviceContext)
     if (m_vertices.empty())
         return;
 
+    // The problematic m_vertices.clear() that discarded particle data is removed.
+    // The brute-forced red quad vertices are also removed.
+
     // Debug log
     static int frameCount = 0;
     if (frameCount++ % 60 == 0) // Every 60 frames
@@ -143,6 +165,10 @@ void ParticleSystem::render(DeviceContext& deviceContext)
     deviceContext.setVertexShader(m_particleVertexShader->getShader());
     deviceContext.setPixelShader(m_particlePixelShader->getShader());
     deviceContext.setInputLayout(m_particleVertexShader->getInputLayout());
+
+    // Set the alpha blending state
+    deviceContext.getDeviceContext()->OMSetBlendState(m_alphaBlendState.Get(), nullptr, 0xffffffff);
+    deviceContext.getDeviceContext()->OMSetDepthStencilState(nullptr, 0);
 
     // Draw all particles
     deviceContext.drawTriangleList(static_cast<ui32>(m_vertices.size()), 0);

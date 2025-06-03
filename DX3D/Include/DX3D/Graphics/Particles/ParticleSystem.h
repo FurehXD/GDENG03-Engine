@@ -45,5 +45,8 @@ namespace dx3d
         // Shaders for particle rendering
         std::shared_ptr<VertexShader> m_particleVertexShader;
         std::shared_ptr<PixelShader> m_particlePixelShader;
+
+        // New: Alpha blend state for particles
+        Microsoft::WRL::ComPtr<ID3D11BlendState> m_alphaBlendState{};
     };
 }

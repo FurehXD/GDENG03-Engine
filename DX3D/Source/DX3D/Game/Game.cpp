@@ -275,7 +275,7 @@ void dx3d::Game::render()
     auto& swapChain = m_display->getSwapChain();
 
     // Clear screen to black
-    deviceContext.clearRenderTargetColor(swapChain, 0.0f, 0.0f, 0.0f, 1.0f);
+    deviceContext.clearRenderTargetColor(swapChain, 0.0f, 0.0f, 1.0f, 1.0f);
     deviceContext.setRenderTargets(swapChain);
     deviceContext.setViewportSize(m_display->getSize().width, m_display->getSize().height);
 

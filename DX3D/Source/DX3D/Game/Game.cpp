@@ -46,9 +46,6 @@ void dx3d::Game::createRenderingResources()
 
     m_rectangles.clear();
 
-    // Create initial rectangle (commented out for now)
-    // m_rectangles.push_back(Rectangle::CreateAt(resourceDesc, 0.0f, 0.0f, 0.6f, 0.8f));
-
     // Create transition shader that handles the color blending internally
     m_transitionVertexShader = std::make_shared<VertexShader>(resourceDesc, TransitionShader::GetVertexShaderCode());
     m_transitionPixelShader = std::make_shared<PixelShader>(resourceDesc, TransitionShader::GetPixelShaderCode());
@@ -64,15 +61,15 @@ void dx3d::Game::initializeParticles()
     // Create particle system
     m_particleSystem = std::make_unique<ParticleSystem>(resourceDesc);
 
-    // Create fire emitter at left side
-    m_fireEmitter = std::make_shared<FireEmitter>(200);
+    // Create fire emitter
+    m_fireEmitter = std::make_shared<FireEmitter>(1000);
     m_fireEmitter->setPosition(Vec2(-0.6f, -0.7f));
     m_fireEmitter->setFlameHeight(0.5f);
     m_fireEmitter->setFlameWidth(0.25f);
     m_fireEmitter->setIntensity(1.0f);
     m_particleSystem->addEmitter(m_fireEmitter);
 
-    // Create shooting star emitter (will launch from top)
+    // Create shooting star emitter
     m_shootingStarEmitter = std::make_shared<ShootingStarEmitter>(100);
     m_particleSystem->addEmitter(m_shootingStarEmitter);
 
@@ -80,7 +77,7 @@ void dx3d::Game::initializeParticles()
     m_electricSparkEmitter = std::make_shared<ElectricSparkEmitter>(150);
     m_electricSparkEmitter->setPosition(Vec2(0.6f, 0.0f));
     m_electricSparkEmitter->setSparkRadius(0.15f);
-    m_electricSparkEmitter->setContinuous(true);  // Continuous sparking
+    m_electricSparkEmitter->setContinuous(true); 
     m_electricSparkEmitter->setSparkIntensity(0.8f);
     m_particleSystem->addEmitter(m_electricSparkEmitter);
 
@@ -211,14 +208,13 @@ void dx3d::Game::updateParticles(float deltaTime)
         DX3DLogInfo("Launched shooting star");
     }
 
-    // Create occasional electric spark bursts (in addition to continuous)
+    // Create occasional electric spark bursts
     static float sparkBurstTimer = 0.0f;
     sparkBurstTimer += deltaTime;
     if (sparkBurstTimer > 1.5f)
     {
         sparkBurstTimer = 0.0f;
 
-        // Random number generation
         static std::mt19937 gen(std::random_device{}());
         std::uniform_real_distribution<float> distX(-0.3f, 0.3f);
         std::uniform_real_distribution<float> distY(-0.4f, 0.4f);
@@ -232,7 +228,6 @@ void dx3d::Game::updateParticles(float deltaTime)
     // Update particle system
     m_particleSystem->update(deltaTime);
 
-    // Debug: Log particle counts
     static float debugTimer = 0.0f;
     debugTimer += deltaTime;
     if (debugTimer > 1.0f) // Every second

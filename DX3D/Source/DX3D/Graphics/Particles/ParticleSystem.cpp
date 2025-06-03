@@ -10,8 +10,7 @@ ParticleSystem::ParticleSystem(const GraphicsResourceDesc& resourceDesc)
     : Base(resourceDesc.base)
     , m_resourceDesc(resourceDesc)
 {
-    // Reserve space for vertices
-    m_vertices.reserve(10000);  // Can handle up to ~3333 particles (3 vertices each for triangles)
+    m_vertices.reserve(10000);
 
     // Create shaders for particle rendering
     m_particleVertexShader = std::make_shared<VertexShader>(
@@ -24,19 +23,18 @@ ParticleSystem::ParticleSystem(const GraphicsResourceDesc& resourceDesc)
         ParticleShader::GetPixelShaderCode()
     );
 
-    // New: Create and configure alpha blend state for particles
     D3D11_BLEND_DESC blendDesc{};
     blendDesc.AlphaToCoverageEnable = FALSE;
     blendDesc.IndependentBlendEnable = FALSE;
 
-    blendDesc.RenderTarget[0].BlendEnable = TRUE; // Enable blending for the first render target
-    blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA; // Source blend factor: (As, As, As, As)
-    blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA; // Destination blend factor: (1-As, 1-As, 1-As, 1-As)
-    blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD; // Add source and destination
-    blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE; // Source alpha blend factor
-    blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO; // Destination alpha blend factor (keep existing alpha)
-    blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD; // Add alpha
-    blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL; // Write all color channels
+    blendDesc.RenderTarget[0].BlendEnable = TRUE; 
+    blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+    blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA; 
+    blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+    blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+    blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO; 
+    blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD; 
+    blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
     DX3DGraphicsLogErrorAndThrow(m_resourceDesc.device.CreateBlendState(&blendDesc, &m_alphaBlendState),
         "Failed to create alpha blend state for particles.");
@@ -84,16 +82,12 @@ void ParticleSystem::render(DeviceContext& deviceContext)
             Vec2 pos = particle->getPosition();
             float size = particle->getSize();
             Vec4 color = particle->getColor();
-            // The alpha channel is already handled by Particle::update and the ParticleShader,
-            // so we keep it as is.
+           
             float rotation = particle->getRotation();
 
-            // Create a quad using two triangles
-            // Calculate rotated corners
             float cos_r = std::cos(rotation);
             float sin_r = std::sin(rotation);
 
-            // Define quad corners before rotation (relative to center)
             Vec2 corners[4] = {
                 Vec2(-size * 0.5f, -size * 0.5f),  // Bottom-left
                 Vec2(size * 0.5f, -size * 0.5f),   // Bottom-right
@@ -101,7 +95,6 @@ void ParticleSystem::render(DeviceContext& deviceContext)
                 Vec2(size * 0.5f, size * 0.5f)     // Top-right
             };
 
-            // Rotate and translate corners
             Vec2 rotatedCorners[4];
             for (int i = 0; i < 4; ++i)
             {
@@ -144,10 +137,6 @@ void ParticleSystem::render(DeviceContext& deviceContext)
     if (m_vertices.empty())
         return;
 
-    // The problematic m_vertices.clear() that discarded particle data is removed.
-    // The brute-forced red quad vertices are also removed.
-
-    // Debug log
     static int frameCount = 0;
     if (frameCount++ % 60 == 0) // Every 60 frames
     {
@@ -197,7 +186,6 @@ void ParticleSystem::clearEmitters()
 
 std::shared_ptr<VertexBuffer> ParticleSystem::createParticleVertexBuffer()
 {
-    // Create a dummy vertex buffer that we'll update later
     Vertex dummyVertices[6] = {};  // Two triangles
 
     return std::make_shared<VertexBuffer>(
@@ -213,7 +201,6 @@ void ParticleSystem::updateVertexBuffer()
     if (m_vertices.empty())
         return;
 
-    // Recreate vertex buffer with current particle data
     m_vertexBuffer = std::make_shared<VertexBuffer>(
         m_vertices.data(),
         sizeof(Vertex),

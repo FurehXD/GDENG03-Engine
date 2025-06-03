@@ -3,10 +3,8 @@
 
 using namespace dx3d;
 
-// FireParticle Implementation
 FireParticle::FireParticle()
 {
-    // Fire-specific defaults
     m_maxLife = 1.5f;
     m_fadeSpeed = 1.0f;
 
@@ -14,8 +12,14 @@ FireParticle::FireParticle()
     m_startColor = Vec4(1.0f, 0.8f, 0.2f, 1.0f);  // Bright yellow-orange
     m_endColor = Vec4(0.2f, 0.0f, 0.0f, 0.0f);    // Dark red, transparent
 
+    //// Blue-purple fire colors
+    //m_startColor = Vec4(0.3f, 0.5f, 1.0f, 1.0f);  // Bright blue
+    //m_endColor = Vec4(0.1f, 0.0f, 0.3f, 0.0f);    // Dark purple, transparent
+
     m_startSize = 0.08f;
     m_endSize = 0.02f;
+
+    
 }
 
 void FireParticle::update(float deltaTime)
@@ -66,6 +70,35 @@ void FireParticle::update(float deltaTime)
             t
         );
     }
+
+    //// Color transition through blue-purple spectrum
+    //if (lifeRatio > 0.7f) {
+    //    // Hot core: bright blue to white-blue
+    //    float t = (lifeRatio - 0.7f) / 0.3f;
+    //    m_color = Vec4::lerp(
+    //        Vec4(0.3f, 0.5f, 1.0f, 1.0f),  // Bright blue
+    //        Vec4(0.8f, 0.9f, 1.0f, 1.0f),  // White-blue
+    //        t
+    //    );
+    //}
+    //else if (lifeRatio > 0.4f) {
+    //    // Mid flame: blue to purple
+    //    float t = (lifeRatio - 0.4f) / 0.3f;
+    //    m_color = Vec4::lerp(
+    //        Vec4(0.5f, 0.2f, 0.8f, 0.8f),  // Purple
+    //        Vec4(0.3f, 0.5f, 1.0f, 1.0f),  // Bright blue
+    //        t
+    //    );
+    //}
+    //else {
+    //    // Cooling: purple to dark smoke
+    //    float t = lifeRatio / 0.4f;
+    //    m_color = Vec4::lerp(
+    //        Vec4(0.1f, 0.05f, 0.2f, 0.0f), // Dark purple smoke, transparent
+    //        Vec4(0.5f, 0.2f, 0.8f, 0.8f),  // Purple
+    //        t
+    //    );
+    //}   
 }
 
 void FireParticle::reset(const Vec2& position, const Vec2& velocity)

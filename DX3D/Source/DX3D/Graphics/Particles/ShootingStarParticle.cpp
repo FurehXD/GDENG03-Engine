@@ -5,7 +5,6 @@
 
 using namespace dx3d;
 
-// StarTrailParticle Implementation
 StarTrailParticle::StarTrailParticle()
 {
     // Trail particle defaults
@@ -49,7 +48,6 @@ void StarTrailParticle::reset(const Vec2& position, const Vec2& velocity)
     m_sparkle = 1.0f;
 }
 
-// ShootingStarEmitter Implementation
 ShootingStarEmitter::ShootingStarEmitter(size_t maxParticles)
     : ParticleEmitter(maxParticles)
 {

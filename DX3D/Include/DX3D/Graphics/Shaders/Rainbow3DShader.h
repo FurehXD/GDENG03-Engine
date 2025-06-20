@@ -23,11 +23,15 @@ namespace dx3d
                 
                 struct VS_OUTPUT {
                     float4 position : SV_POSITION;
-                    float3 worldPos : TEXCOORD0;
+                    float3 objectPos : TEXCOORD0;  // Pass object-space position
+                    float3 worldPos : TEXCOORD1;   // Keep world pos for optional effects
                 };
                 
                 VS_OUTPUT main(VS_INPUT input) {
                     VS_OUTPUT output;
+                    
+                    // Store the original object-space position for rainbow calculation
+                    output.objectPos = input.position;
                     
                     // Transform the position from object space to world space
                     float4 worldPosition = mul(float4(input.position, 1.0f), world);
@@ -49,7 +53,8 @@ namespace dx3d
             return R"(
                 struct PS_INPUT {
                     float4 position : SV_POSITION;
-                    float3 worldPos : TEXCOORD0;
+                    float3 objectPos : TEXCOORD0;
+                    float3 worldPos : TEXCOORD1;
                 };
                 
                 // Enhanced HSV to RGB conversion for vibrant rainbow colors
@@ -60,21 +65,45 @@ namespace dx3d
                 }
                 
                 float4 main(PS_INPUT input) : SV_TARGET {
-                    // Create rainbow based on world position
-                    float3 pos = input.worldPos;
+                    // Use object-space coordinates for consistent rainbow pattern
+                    float3 objPos = input.objectPos;
                     
-                    // Calculate hue based on X and Z position
-                    float hue = (pos.x + pos.z) * 0.1 + length(pos) * 0.05;
-                    hue = fmod(hue, 1.0); // Keep hue in [0,1] range
+                    // Create rainbow based on object coordinates (not world position)
+                    // This ensures consistent colors regardless of object position/scale
+                    
+                    // Method 1: Horizontal rainbow based on X coordinate
+                    // Map X coordinate from [-0.5, 0.5] to [0, 1] for hue
+                    float hue = (objPos.x + 0.5) * 2.0; // Assuming object coords are roughly [-0.5, 0.5]
+                    
+                    // Alternative Method 2: Diagonal rainbow (uncomment to use)
+                    // float hue = (objPos.x + objPos.z + 1.0) * 0.5;
+                    
+                    // Alternative Method 3: Radial rainbow from center (uncomment to use)
+                    // float distance = length(objPos.xz);
+                    // float hue = distance * 2.0;
+                    
+                    // Alternative Method 4: Spiral rainbow (uncomment to use)
+                    // float angle = atan2(objPos.z, objPos.x);
+                    // float hue = (angle + 3.14159) / (2.0 * 3.14159); // Map angle to [0,1]
+                    // hue += objPos.y * 0.5; // Add vertical component
+                    
+                    // Keep hue in [0,1] range
+                    hue = frac(hue);
                     
                     // High saturation and brightness for vivid colors
-                    float saturation = 0.9;
+                    float saturation = 1.0;
                     float brightness = 0.95;
+                    
+                    // Optional: Add subtle variation based on surface normal approximation
+                    // This can add some depth while maintaining consistent base colors
+                    float normalVariation = sin(objPos.y * 10.0) * 0.05;
+                    brightness += normalVariation;
+                    brightness = clamp(brightness, 0.5, 1.0);
                     
                     float3 rainbowColor = hsv2rgb(float3(hue, saturation, brightness));
                     
                     // Boost the colors for maximum vibrancy
-                    rainbowColor = saturate(rainbowColor * 1.2);
+                    rainbowColor = saturate(rainbowColor * 1.1);
                     
                     return float4(rainbowColor, 1.0);
                 }

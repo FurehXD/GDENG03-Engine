@@ -5,7 +5,7 @@
 #include <chrono>
 #include <memory>
 #include <vector>
-#include <d3d11.h> // FIX: Include d3d11 for ID3D11DepthStencilState
+#include <d3d11.h>
 #include "imgui.h"
 #include "imgui_impl_win32.h"
 #include "imgui_impl_dx11.h"
@@ -39,6 +39,8 @@ namespace dx3d
 
         virtual void run() final;
     private:
+        // Private constructor for delegation
+        Game(const GameDesc& desc, std::unique_ptr<Logger> logger);
         void render();
         void createRenderingResources();
         void update();

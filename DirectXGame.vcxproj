@@ -147,6 +147,8 @@
     <ClCompile Include="DX3D\Source\DX3D\Graphics\Particles\ParticleEmitter.cpp" />
     <ClCompile Include="DX3D\Source\DX3D\Graphics\Particles\ParticleSystem.cpp" />
     <ClCompile Include="DX3D\Source\DX3D\Graphics\Particles\ShootingStarParticle.cpp" />
+    <ClCompile Include="DX3D\Source\DX3D\Graphics\Primitives\Circle.cpp" />
+    <ClCompile Include="DX3D\Source\DX3D\Input\InputSystem.cpp" />
     <ClCompile Include="Game\main.cpp" />
     <ClCompile Include="DX3D\Source\DX3D\Window\Win32\Win32Window.cpp" />
     <ClCompile Include="DX3D\Source\DX3D\Graphics\GraphicsEngine.cpp" />
@@ -165,6 +167,7 @@
     <ClInclude Include="DX3D\Include\DX3D\Graphics\Particles\Particles.h" />
     <ClInclude Include="DX3D\Include\DX3D\Graphics\Particles\ParticleSystem.h" />
     <ClInclude Include="DX3D\Include\DX3D\Graphics\Particles\ShootingStarParticle.h" />
+    <ClInclude Include="DX3D\Include\DX3D\Graphics\Primitives\Circle.h" />
     <ClInclude Include="DX3D\Include\DX3D\Graphics\Shaders\ColorShader.h" />
     <ClInclude Include="DX3D\Include\DX3D\Graphics\DeviceContext.h" />
     <ClInclude Include="DX3D\Include\DX3D\Game\Display.h" />
@@ -178,6 +181,7 @@
     <ClInclude Include="DX3D\Include\DX3D\Graphics\Shaders\SimpleBlendedShader.h" />
     <ClInclude Include="DX3D\Include\DX3D\Graphics\Shaders\TransitionShader.h" />
     <ClInclude Include="DX3D\Include\DX3D\Graphics\Vertex.h" />
+    <ClInclude Include="DX3D\Include\DX3D\Input\InputSystem.h" />
     <ClInclude Include="DX3D\Include\DX3D\Math\Rect.h" />
     <ClInclude Include="DX3D\Include\DX3D\Math\Vec2.h" />
     <ClInclude Include="DX3D\Include\DX3D\Window\Window.h" />

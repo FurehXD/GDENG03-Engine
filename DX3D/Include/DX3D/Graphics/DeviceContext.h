@@ -23,7 +23,7 @@ namespace dx3d
         void setInputLayout(ID3D11InputLayout* inputLayout);
         void setRenderTargets(SwapChain& swapChain);
         void drawTriangleList(ui32 vertexCount, ui32 startVertexIndex);
-        void drawTriangleStrip(ui32 vertexCount, ui32 startVertexIndex); // New method for triangle strips
+        void drawTriangleStrip(ui32 vertexCount, ui32 startVertexIndex);
         void present(SwapChain& swapChain);
 
         ID3D11DeviceContext* getDeviceContext();

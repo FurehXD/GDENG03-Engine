@@ -1,8 +1,11 @@
 #pragma once
 #include <DX3D/Core/Base.h>
 #include <DX3D/Core/Core.h>
+#include <DX3D/Math/Vec2.h>
 #include <vector>
 #include <chrono>
+#include <random> 
+#include <DX3D/Input/InputSystem.h>
 
 // Forward declarations
 namespace dx3d
@@ -14,10 +17,18 @@ namespace dx3d
     class FireEmitter;
     class ShootingStarEmitter;
     class ElectricSparkEmitter;
+    class Circle;
 }
 
 namespace dx3d
 {
+    // A simple structure to hold the state of each bouncing circle
+    struct BouncingCircle
+    {
+        Vec2 position;
+        Vec2 velocity;
+    };
+
     class Game : public Base
     {
     public:
@@ -26,17 +37,24 @@ namespace dx3d
 
         virtual void run() final;
     private:
+        void handleInput();
         void render();
         void createRenderingResources();
         void updateAnimation();
         void updateRectangleVertices();
-        void updateRectangleVertices(float skewAmount); // New overload for skewing
+        void updateRectangleVertices(float skewAmount);
         float lerp(float a, float b, float t);
-        float smoothstep(float t); // For smooth transitions
+        float smoothstep(float t);
 
         // Particle system methods
         void initializeParticles();
         void updateParticles(float deltaTime);
+
+        // Update the function to handle multiple circles
+        void updateCircles(float deltaTime);
+        void spawnCircle();
+        void removeLastCircle();
+        void removeAllCircles();
 
     private:
         std::unique_ptr<Logger> m_loggerPtr{};
@@ -44,8 +62,15 @@ namespace dx3d
         std::unique_ptr<Display> m_display{};
         bool m_isRunning{ true };
 
-        // Single animated rectangle (commented out for now)
         std::vector<std::shared_ptr<VertexBuffer>> m_rectangles{};
+
+        // --- Replace single circle members with collections ---
+        int m_numCircles = 15; // Set the number of circles to generate
+        std::vector<BouncingCircle> m_bouncingCircles;
+        std::vector<std::shared_ptr<VertexBuffer>> m_circleVBs;
+        float m_circleRadius = 0.08f;
+        float m_aspectRatio = 1.0f;
+        // ---------------------------------------------------
 
         // Shaders
         std::shared_ptr<VertexShader> m_transitionVertexShader{};

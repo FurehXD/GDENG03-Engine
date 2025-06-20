@@ -7,9 +7,11 @@
 #include <DX3D/Graphics/SwapChain.h>
 #include <DX3D/Graphics/DeviceContext.h>
 #include <DX3D/Graphics/Primitives/Rectangle.h>
+#include <DX3D/Graphics/Primitives/Circle.h>
 #include <DX3D/Graphics/Shaders/TransitionShader.h>
+#include <d3d11.h>
+#include <thread>
 
-// Particle system includes
 #include <DX3D/Graphics/Particles/ParticleSystem.h>
 #include <DX3D/Graphics/Particles/FireParticle.h>
 #include <DX3D/Graphics/Particles/ShootingStarParticle.h>
@@ -25,8 +27,22 @@ dx3d::Game::Game(const GameDesc& desc) :
     m_graphicsEngine = std::make_unique<GraphicsEngine>(GraphicsEngineDesc{ m_logger });
     m_display = std::make_unique<Display>(DisplayDesc{ {m_logger,desc.windowSize},m_graphicsEngine->getRenderSystem() });
 
-    // Initialize animation timer
     m_startTime = std::chrono::steady_clock::now();
+
+    // --- Initialize multiple circles ---
+    std::mt19937 rng(std::random_device{}());
+    std::uniform_real_distribution<float> posDist(-0.8f, 0.8f);
+    std::uniform_real_distribution<float> velDist(0.8f, 0.9f);
+    std::uniform_int_distribution<int> signDist(0, 1);
+
+    m_bouncingCircles.reserve(m_numCircles);
+    for (int i = 0; i < m_numCircles; ++i)
+    {
+        BouncingCircle circle;
+        circle.position = Vec2(posDist(rng), posDist(rng));
+        circle.velocity = Vec2(velDist(rng) * (signDist(rng) ? 1 : -1), velDist(rng) * (signDist(rng) ? 1 : -1));
+        m_bouncingCircles.push_back(circle);
+    }
 
     createRenderingResources();
     initializeParticles();
@@ -36,6 +52,8 @@ dx3d::Game::Game(const GameDesc& desc) :
 
 dx3d::Game::~Game()
 {
+
+   
     DX3DLogInfo("Game deallocation started.");
 }
 
@@ -44,13 +62,115 @@ void dx3d::Game::createRenderingResources()
     auto& renderSystem = m_graphicsEngine->getRenderSystem();
     auto resourceDesc = renderSystem.getGraphicsResourceDesc();
 
-    m_rectangles.clear();
+    const auto& winSize = m_display->getSize();
+    m_aspectRatio = static_cast<float>(winSize.width) / static_cast<float>(winSize.height);
 
-    // Create transition shader that handles the color blending internally
     m_transitionVertexShader = std::make_shared<VertexShader>(resourceDesc, TransitionShader::GetVertexShaderCode());
     m_transitionPixelShader = std::make_shared<PixelShader>(resourceDesc, TransitionShader::GetPixelShaderCode());
 
     DX3DLogInfo("Rendering resources created successfully.");
+}
+
+void dx3d::Game::updateCircles(float deltaTime)
+{
+    auto& renderSystem = m_graphicsEngine->getRenderSystem();
+    auto resourceDesc = renderSystem.getGraphicsResourceDesc();
+
+    // Clear the vertex buffers from the previous frame
+    m_circleVBs.clear();
+    m_circleVBs.reserve(m_numCircles);
+
+    const float radiusX = m_circleRadius / m_aspectRatio;
+    const float radiusY = m_circleRadius;
+
+    // Loop through each circle to update its state
+    for (auto& circle : m_bouncingCircles)
+    {
+        circle.position += circle.velocity * deltaTime;
+
+        // Boundary collision checks
+        if (circle.position.x + radiusX > 1.0f)
+        {
+            circle.velocity.x *= -1;
+            circle.position.x = 1.0f - radiusX;
+        }
+        else if (circle.position.x - radiusX < -1.0f)
+        {
+            circle.velocity.x *= -1;
+            circle.position.x = -1.0f + radiusX;
+        }
+
+        if (circle.position.y + radiusY > 1.0f)
+        {
+            circle.velocity.y *= -1;
+            circle.position.y = 1.0f - radiusY;
+        }
+        else if (circle.position.y - radiusY < -1.0f)
+        {
+            circle.velocity.y *= -1;
+            circle.position.y = -1.0f + radiusY;
+        }
+
+        // Create a new vertex buffer for the circle at its new position
+        m_circleVBs.push_back(Circle::CreateAt(resourceDesc, circle.position.x, circle.position.y, m_circleRadius, 32, m_aspectRatio));
+    }
+}
+
+void dx3d::Game::spawnCircle()
+{
+    // Re-use the random generation from the constructor
+    std::mt19937 rng(std::random_device{}());
+    std::uniform_real_distribution<float> posDist(-0.8f, 0.8f);
+    std::uniform_real_distribution<float> velDist(0.2f, 0.5f);
+    std::uniform_int_distribution<int> signDist(0, 1);
+
+    BouncingCircle circle;
+    circle.position = Vec2(posDist(rng), posDist(rng));
+    circle.velocity = Vec2(velDist(rng) * (signDist(rng) ? 1 : -1), velDist(rng) * (signDist(rng) ? 1 : -1));
+    m_bouncingCircles.push_back(circle);
+}
+
+void dx3d::Game::removeLastCircle()
+{
+    if (!m_bouncingCircles.empty())
+    {
+        m_bouncingCircles.pop_back();
+    }
+}
+
+void dx3d::Game::removeAllCircles()
+{
+    m_bouncingCircles.clear();
+}
+
+void dx3d::Game::handleInput()
+{
+    // ESC: Close the application
+    if (InputSystem::isKeyJustPressed(VK_ESCAPE))
+    {
+        m_isRunning = false;
+    }
+
+    // SPACEBAR: Spawn a new circle
+    if (InputSystem::isKeyJustPressed(VK_SPACE))
+    {
+        spawnCircle();
+        DX3DLogInfo("SPAWNED CIRCLE");
+    }
+
+    // BACKSPACE: Remove the last circle
+    if (InputSystem::isKeyJustPressed(VK_BACK))
+    {
+        removeLastCircle();
+        DX3DLogInfo("DELETED LAST CIRCLE");
+    }
+
+    // DELETE: Remove all circles
+    if (InputSystem::isKeyJustPressed(VK_DELETE))
+    {
+        removeAllCircles();
+        DX3DLogInfo("DELETED ALL CIRCLES");
+    }
 }
 
 void dx3d::Game::initializeParticles()
@@ -97,41 +217,7 @@ float dx3d::Game::smoothstep(float t)
 
 void dx3d::Game::updateAnimation()
 {
-    // Animation code commented out for now
-    /*
-    auto currentTime = std::chrono::steady_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - m_startTime);
-    m_animationTime = elapsed.count() / 1000.0f;
-
-    // 8-second cycle: 4 seconds to transform, 4 seconds to transform back (slower)
-    float cycleDuration = 8.0f;
-    float cycleTime = fmod(m_animationTime, cycleDuration) / cycleDuration;
-
-    // Create smooth back-and-forth motion
-    float animPhase;
-    if (cycleTime < 0.5f) {
-        // First half: rectangle to parallelogram
-        animPhase = cycleTime * 2.0f;
-    }
-    else {
-        // Second half: parallelogram back to rectangle
-        animPhase = 2.0f - (cycleTime * 2.0f);
-    }
-
-    // Apply smooth easing
-    float smoothPhase = smoothstep(animPhase);
-
-    // Calculate skew amount (0.0 = rectangle, 1.0 = parallelogram)
-    float skewAmount = smoothPhase;
-
-    // Update shape parameters with rightward movement
-    m_currentX = lerp(-0.3f, 0.3f, smoothPhase); // Move from left to right
-    m_currentY = 0.0f;
-    m_currentWidth = 0.6f;
-    m_currentHeight = 0.8f;
-
-    updateRectangleVertices(skewAmount);
-    */
+    
 }
 
 void dx3d::Game::updateRectangleVertices()
@@ -142,41 +228,7 @@ void dx3d::Game::updateRectangleVertices()
 
 void dx3d::Game::updateRectangleVertices(float skewAmount)
 {
-    // Rectangle update code commented out for now
-    /*
-    auto& renderSystem = m_graphicsEngine->getRenderSystem();
-    auto resourceDesc = renderSystem.getGraphicsResourceDesc();
-
-    // Calculate vertices manually with skew applied
-    float halfWidth = m_currentWidth * 0.5f;
-    float halfHeight = m_currentHeight * 0.5f;
-
-    // Skew offset - applied to top vertices to create parallelogram
-    float skewOffset = skewAmount * 0.3f; // Maximum skew
-
-    // Create vertices for triangle strip (same order as Rectangle class)
-    Vertex vertices[] = {
-        // Top-left (with skew)
-        { {m_currentX - halfWidth + skewOffset, m_currentY + halfHeight, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f} },
-        // Top-right (with skew)
-        { {m_currentX + halfWidth + skewOffset, m_currentY + halfHeight, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f} },
-        // Bottom-left (no skew)
-        { {m_currentX - halfWidth, m_currentY - halfHeight, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f} },
-        // Bottom-right (no skew)
-        { {m_currentX + halfWidth, m_currentY - halfHeight, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f} }
-    };
-
-    // Recreate the vertex buffer with new vertices
-    m_rectangles.clear();
-    m_rectangles.push_back(
-        std::make_shared<VertexBuffer>(
-            vertices,
-            sizeof(Vertex),
-            4,
-            resourceDesc
-        )
-    );
-    */
+    
 }
 
 void dx3d::Game::updateParticles(float deltaTime)
@@ -251,17 +303,28 @@ void dx3d::Game::updateParticles(float deltaTime)
 
 void dx3d::Game::render()
 {
-    // Calculate delta time
-    auto currentTime = std::chrono::steady_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - m_startTime);
-    static auto lastTime = elapsed.count();
-    auto currentTimeMs = elapsed.count();
-    float deltaTime = (currentTimeMs - lastTime) / 1000.0f;
-    lastTime = currentTimeMs;
+    // --- Define our target framerate ---
+    const float TARGET_FPS = 60.0f;
+    const auto TARGET_FRAMETIME = std::chrono::duration<double, std::milli>(1000.0 / TARGET_FPS);
+    // ---
 
-    // Clamp delta time to prevent large jumps
-    deltaTime = std::min(deltaTime, 0.033f); // Cap at ~30 FPS minimum
+    // Record the time at the start of the frame
+    auto frameStartTime = std::chrono::steady_clock::now();
 
+
+    // ---TIMING ---
+    // Use a fixed delta time for all game logic to ensure consistent simulation speed
+    const float deltaTime = 1.0f / TARGET_FPS;
+
+
+    // --- INPUT ---
+    handleInput();
+
+    // --- UPDATE ---
+    updateCircles(deltaTime);
+    //updateParticles(deltaTime); // Particles are commented out as requested
+
+    // --- RENDER ---
     auto& renderSystem = m_graphicsEngine->getRenderSystem();
     auto& deviceContext = renderSystem.getDeviceContext();
     auto& swapChain = m_display->getSwapChain();
@@ -270,8 +333,34 @@ void dx3d::Game::render()
     deviceContext.setRenderTargets(swapChain);
     deviceContext.setViewportSize(m_display->getSize().width, m_display->getSize().height);
 
-    updateParticles(deltaTime);
-    m_particleSystem->render(deviceContext);
+    deviceContext.setVertexShader(m_transitionVertexShader->getShader());
+    deviceContext.setPixelShader(m_transitionPixelShader->getShader());
+    deviceContext.setInputLayout(m_transitionVertexShader->getInputLayout());
 
+    for (const auto& circleVB : m_circleVBs)
+    {
+        if (circleVB)
+        {
+            deviceContext.setVertexBuffer(*circleVB);
+            deviceContext.drawTriangleList(circleVB->getVertexCount(), 0);
+        }
+    }
+
+    //m_particleSystem->render(deviceContext); // Particles are commented out as requested
     deviceContext.present(swapChain);
+
+    InputSystem::update();
+
+    // --- FRAME RATE CAPPING ---
+    // Record the time at the end of the frame
+    auto frameEndTime = std::chrono::steady_clock::now();
+    // Calculate how long the frame actually took
+    auto frameDuration = frameEndTime - frameStartTime;
+
+    // If the frame finished faster than our target, sleep for the remaining time
+    if (frameDuration < TARGET_FRAMETIME)
+    {
+        auto sleepDuration = TARGET_FRAMETIME - frameDuration;
+        std::this_thread::sleep_for(sleepDuration);
+    }
 }

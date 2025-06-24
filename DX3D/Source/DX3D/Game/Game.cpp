@@ -64,7 +64,7 @@ void dx3d::Game::createRenderingResources()
     auto d3dContext = deviceContext.getDeviceContext();
     ID3D11Device* device = nullptr;
     d3dContext->GetDevice(&device);
-    
+
     // Create vertex and index buffers for all primitives
     m_cubeVertexBuffer = Cube::CreateVertexBuffer(resourceDesc);
     m_cubeIndexBuffer = Cube::CreateIndexBuffer(resourceDesc);
@@ -97,13 +97,14 @@ void dx3d::Game::createRenderingResources()
     // State for transparent particles (depth test on, depth write off)
     D3D11_DEPTH_STENCIL_DESC particleDesc = {};
     particleDesc.DepthEnable = TRUE;
-    particleDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // Main difference here!
+    particleDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
     particleDesc.DepthFunc = D3D11_COMPARISON_LESS;
     particleDesc.StencilEnable = FALSE;
     device->CreateDepthStencilState(&particleDesc, &m_particleDepthState);
 
     device->Release();
 
+    // Create shaders
     m_rainbowVertexShader = std::make_shared<VertexShader>(resourceDesc, Rainbow3DShader::GetVertexShaderCode());
     m_rainbowPixelShader = std::make_shared<PixelShader>(resourceDesc, Rainbow3DShader::GetPixelShaderCode());
     m_whiteVertexShader = std::make_shared<VertexShader>(resourceDesc, WhiteShader::GetVertexShaderCode());
@@ -112,66 +113,138 @@ void dx3d::Game::createRenderingResources()
     m_fogPixelShader = std::make_shared<PixelShader>(resourceDesc, FogShader::GetPixelShaderCode());
     m_fogConstantBuffer = std::make_shared<ConstantBuffer>(sizeof(FogShaderConstants), resourceDesc);
     m_materialConstantBuffer = std::make_shared<ConstantBuffer>(sizeof(FogMaterialConstants), resourceDesc);
-
     m_transformConstantBuffer = std::make_shared<ConstantBuffer>(sizeof(TransformationMatrices), resourceDesc);
 
-    // Create game objects - arrange them on the plane
-    m_gameObjects.reserve(6); // Increased for new primitives
-    m_objectRotationDeltas.reserve(6);
+    // Initialize random number generation for scattering objects
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<float> positionDist(-40.0f, 40.0f); // Large area distribution
+    std::uniform_real_distribution<float> heightDist(0.5f, 8.0f);     // Height above ground
+    std::uniform_real_distribution<float> scaleDist(0.8f, 2.5f);      // Scale variation
+    std::uniform_real_distribution<float> rotationDist(0.0f, 6.28318f); // Full rotation range
+    std::uniform_int_distribution<int> typeDist(0, 3);
 
-    // Cube - center
-    m_gameObjects.push_back(std::make_shared<Cube>(
-        Vector3(0.0f, 1.0f, 0.0f),
-        Vector3(0.0f, 0.0f, 0.0f),
-        Vector3(1.5f, 1.5f, 1.5f)
-    ));
-    m_objectRotationDeltas.push_back(Vector3(0.0f, 0.8f, 0.0f));
+    // Clear and reserve space for many objects
+    m_gameObjects.clear();
+    m_objectRotationDeltas.clear();
+    m_gameObjects.reserve(150); 
+    m_objectRotationDeltas.reserve(150);
 
-    // Sphere - left
-    m_gameObjects.push_back(std::make_shared<Sphere>(
-        Vector3(-3.0f, 1.0f, 0.0f),
-        Vector3(0.0f, 0.0f, 0.0f),
-        Vector3(1.5f, 1.5f, 1.5f)
-    ));
-    m_objectRotationDeltas.push_back(Vector3(0.3f, 0.5f, 0.0f));
-
-    // Cylinder - right
-    m_gameObjects.push_back(std::make_shared<Cylinder>(
-        Vector3(3.0f, 1.0f, 0.0f),
-        Vector3(0.0f, 0.0f, 0.0f),
-        Vector3(1.5f, 1.5f, 1.5f)
-    ));
-    m_objectRotationDeltas.push_back(Vector3(-0.2f, 0.6f, 0.0f));
-
-    // Capsule - front
-    m_gameObjects.push_back(std::make_shared<Capsule>(
-        Vector3(0.0f, 1.0f, 3.0f),
-        Vector3(0.0f, 0.0f, 0.0f),
-        Vector3(10.5f, 10.5f, 1.5f)
-    ));
-    m_objectRotationDeltas.push_back(Vector3(0.4f, 0.3f, 0.2f));
-
-    // Second row of objects
-    // Another Sphere - back left
-    m_gameObjects.push_back(std::make_shared<Sphere>(
-        Vector3(-3.0f, 1.0f, -3.0f),
-        Vector3(0.0f, 0.0f, 0.0f),
-        Vector3(1.2f, 1.2f, 1.2f)
-    ));
-    m_objectRotationDeltas.push_back(Vector3(0.0f, -0.7f, 0.3f));
-
-    // Plane - expanded to accommodate all objects
+    // CREATE MASSIVE PLANE (100x100 units)
     m_gameObjects.push_back(std::make_shared<Plane>(
-        Vector3(0.0f, 0.0f, 0.0f),      // Center at origin
-        Vector3(-1.5708f, 0.0f, 0.0f),  // Horizontal
-        Vector3(100.0f, 100.0f, 1.0f)     // Large plane
+        Vector3(0.0f, 0.0f, 0.0f),     
+        Vector3(-1.5708f, 0.0f, 0.0f), 
+        Vector3(50.0f, 50.0f, 1.0f)     
     ));
-    m_objectRotationDeltas.push_back(Vector3(0.0f, 0.0f, 0.0f)); // Static plane
+    m_objectRotationDeltas.push_back(Vector3(0.0f, 0.0f, 0.0f));
 
-    // Create camera
+    for (int i = 0; i < 100; ++i) 
+    {
+        // Generate random properties
+        Vector3 position(
+            positionDist(gen),  // Random X
+            heightDist(gen),    // Random height above ground
+            positionDist(gen)   // Random Z
+        );
+
+        Vector3 rotation(
+            rotationDist(gen),
+            rotationDist(gen),
+            rotationDist(gen)
+        );
+
+        Vector3 scale(
+            scaleDist(gen),
+            scaleDist(gen),
+            scaleDist(gen)
+        );
+
+        Vector3 rotationDelta(
+            (rotationDist(gen) - 3.14159f) * 0.5f, // Random rotation speed
+            (rotationDist(gen) - 3.14159f) * 0.5f,
+            (rotationDist(gen) - 3.14159f) * 0.5f
+        );
+
+        // Randomly choose primitive type
+        int primitiveType = typeDist(gen);
+
+        switch (primitiveType)
+        {
+        case 0: // Cube
+            m_gameObjects.push_back(std::make_shared<Cube>(position, rotation, scale));
+            break;
+        case 1: // Sphere
+            m_gameObjects.push_back(std::make_shared<Sphere>(position, rotation, scale));
+            break;
+        case 2: // Cylinder
+            m_gameObjects.push_back(std::make_shared<Cylinder>(position, rotation, scale));
+            break;
+        case 3: // Capsule
+            m_gameObjects.push_back(std::make_shared<Capsule>(position, rotation, scale));
+            break;
+        }
+
+        m_objectRotationDeltas.push_back(rotationDelta);
+    }
+
+    m_gameObjects.push_back(std::make_shared<Cube>(
+        Vector3(0.0f, 2.0f, 0.0f),
+        Vector3(0.0f, 0.0f, 0.0f),
+        Vector3(3.0f, 3.0f, 3.0f)
+    ));
+    m_objectRotationDeltas.push_back(Vector3(0.0f, 1.0f, 0.0f));
+
+    m_gameObjects.push_back(std::make_shared<Sphere>(
+        Vector3(-35.0f, 3.0f, -35.0f),
+        Vector3(0.0f, 0.0f, 0.0f),
+        Vector3(4.0f, 4.0f, 4.0f)
+    ));
+    m_objectRotationDeltas.push_back(Vector3(0.2f, 0.3f, 0.1f));
+
+    m_gameObjects.push_back(std::make_shared<Sphere>(
+        Vector3(35.0f, 3.0f, -35.0f),
+        Vector3(0.0f, 0.0f, 0.0f),
+        Vector3(4.0f, 4.0f, 4.0f)
+    ));
+    m_objectRotationDeltas.push_back(Vector3(-0.2f, 0.3f, -0.1f));
+
+    m_gameObjects.push_back(std::make_shared<Sphere>(
+        Vector3(-35.0f, 3.0f, 35.0f),
+        Vector3(0.0f, 0.0f, 0.0f),
+        Vector3(4.0f, 4.0f, 4.0f)
+    ));
+    m_objectRotationDeltas.push_back(Vector3(0.1f, -0.3f, 0.2f));
+
+    m_gameObjects.push_back(std::make_shared<Sphere>(
+        Vector3(35.0f, 3.0f, 35.0f),
+        Vector3(0.0f, 0.0f, 0.0f),
+        Vector3(4.0f, 4.0f, 4.0f)
+    ));
+    m_objectRotationDeltas.push_back(Vector3(-0.1f, -0.3f, -0.2f));
+
+    // Create rows of cylinders to show fog gradient
+    for (int row = 0; row < 5; ++row)
+    {
+        float zPos = -20.0f + (row * 10.0f); // Every 10 units
+        for (int col = 0; col < 5; ++col)
+        {
+            float xPos = -20.0f + (col * 10.0f);
+
+            m_gameObjects.push_back(std::make_shared<Cylinder>(
+                Vector3(xPos, 2.5f, zPos),
+                Vector3(0.0f, 0.0f, 0.0f),
+                Vector3(1.5f, 2.5f, 1.5f)
+            ));
+            m_objectRotationDeltas.push_back(Vector3(0.0f, 0.5f, 0.0f));
+        }
+    }
+
+    DX3DLogInfo("Created scene with %zu objects", m_gameObjects.size());
+
+    // Create camera positioned to see the fog effect
     m_camera = std::make_unique<Camera>(
-        Vector3(8.0f, 6.0f, -8.0f),     // Initial position
-        Vector3(0.0f, 1.0f, 0.0f)       // Look at slightly above origin
+        Vector3(0.0f, 5.0f, -25.0f),   
+        Vector3(0.0f, 2.0f, 0.0f)      
     );
 
     // Setup projection matrix
@@ -180,7 +253,7 @@ void dx3d::Game::createRenderingResources()
         1.0472f,        // 60 degrees
         aspectRatio,
         0.1f,
-        100.0f
+        200.0f          // Increased far plane to see distant objects
     );
 
     // Initialize particle system
@@ -203,23 +276,23 @@ void dx3d::Game::createRenderingResources()
     snowConfig.maxParticles = 2000;
 
     auto snowEmitter = ParticleSystem::getInstance().createEmitter(
-        "snow", 
-        snowConfig, 
+        "snow",
+        snowConfig,
         createSnowParticle
     );
 
+    // Initialize ImGui
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 
-    // Setup Platform/Renderer backends
     HWND hwnd = m_display->getWindowHandle();
     ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX11_Init(device, d3dContext);
 
-    DX3DLogInfo("All primitives created: Cube, Sphere, Cylinder, Capsule, and Plane.");
+    DX3DLogInfo("All primitives created: %zu total objects including Cubes, Spheres, Cylinders, Capsules, and Plane.", m_gameObjects.size());
     DX3DLogInfo("Camera created. Hold right mouse button + WASD to move camera.");
 }
 

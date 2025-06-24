@@ -115,8 +115,6 @@ void dx3d::Game::createRenderingResources()
 
     m_transformConstantBuffer = std::make_shared<ConstantBuffer>(sizeof(TransformationMatrices), resourceDesc);
 
-
-
     // Create game objects - arrange them on the plane
     m_gameObjects.reserve(6); // Increased for new primitives
     m_objectRotationDeltas.reserve(6);
@@ -166,7 +164,7 @@ void dx3d::Game::createRenderingResources()
     m_gameObjects.push_back(std::make_shared<Plane>(
         Vector3(0.0f, 0.0f, 0.0f),      // Center at origin
         Vector3(-1.5708f, 0.0f, 0.0f),  // Horizontal
-        Vector3(10.0f, 10.0f, 1.0f)     // Large plane
+        Vector3(100.0f, 100.0f, 1.0f)     // Large plane
     ));
     m_objectRotationDeltas.push_back(Vector3(0.0f, 0.0f, 0.0f)); // Static plane
 
@@ -276,6 +274,10 @@ void dx3d::Game::update()
     ImGui::Checkbox("Enable Fog", &m_fogDesc.enabled);
     ImGui::SliderFloat("Fog Start", &m_fogDesc.start, 0.1f, 50.0f);
     ImGui::SliderFloat("Fog End", &m_fogDesc.end, 1.0f, 100.0f);
+
+    if (m_fogDesc.end < m_fogDesc.start) m_fogDesc.end = m_fogDesc.start;
+    if (m_fogDesc.start > m_fogDesc.end) m_fogDesc.start = m_fogDesc.end;
+
     ImGui::ColorEdit3("Fog Color", &m_fogDesc.color.x);
 
     if (ImGui::CollapsingHeader("Snow Particles"))

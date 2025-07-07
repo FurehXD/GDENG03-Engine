@@ -5,7 +5,9 @@
 #include <DX3D/Math/Math.h>
 #include <memory>
 
-#define SEGMENTS (ui32)12
+#define SEGMENTS_VALUE 1
+// If SEGMENTS_VALUE is less than 2, it will be clamped to 2.
+#define SEGMENTS ((SEGMENTS_VALUE < 2) ? 2 : SEGMENTS_VALUE)
 
 namespace dx3d
 {
@@ -21,6 +23,6 @@ namespace dx3d
         static std::shared_ptr<IndexBuffer> CreateIndexBuffer(const GraphicsResourceDesc& resourceDesc);
 
         // Get the number of indices for a camera gizmo
-        static ui32 GetIndexCount() { return SEGMENTS * SEGMENTS * 3; }
+        static ui32 GetIndexCount() { return SEGMENTS * 36; }
     };
 }

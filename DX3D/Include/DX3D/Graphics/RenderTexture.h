@@ -1,5 +1,6 @@
 #pragma once
 #include <DX3D/Graphics/GraphicsResource.h>
+#include <DX3D/Core/Common.h>
 
 namespace dx3d
 {
@@ -18,6 +19,8 @@ namespace dx3d
         ID3D11ShaderResourceView* getShaderResourceView() const { return m_shaderResourceView.Get(); }
         ID3D11RenderTargetView* getRenderTargetView() const { return m_renderTargetView.Get(); }
         ID3D11DepthStencilView* getDepthStencilView() const { return m_depthStencilView.Get(); }
+
+        Rect getSize() const;
 
     private:
         void createResources(ui32 width, ui32 height);

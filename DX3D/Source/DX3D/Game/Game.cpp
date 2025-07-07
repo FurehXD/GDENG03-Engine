@@ -87,14 +87,14 @@ void dx3d::Game::createRenderingResources()
     m_cameraIconVertexBuffer = CameraIcon::CreateVertexBuffer(resourceDesc);
     m_cameraIconIndexBuffer = CameraIcon::CreateIndexBuffer(resourceDesc);
 
-    // Define the default layout for shaders that use Position and Color
+    //def layout for shaders that use Position and Color
     D3D11_INPUT_ELEMENT_DESC defaultLayout[] = {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
         { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
     };
 
 
-    // Update the creation of your existing vertex shaders
+    //update existing vertex shaders
     m_rainbowVertexShader = std::make_shared<VertexShader>(resourceDesc, Rainbow3DShader::GetVertexShaderCode(), defaultLayout, 2);
     m_whiteVertexShader = std::make_shared<VertexShader>(resourceDesc, WhiteShader::GetVertexShaderCode(), defaultLayout, 2);
     m_fogVertexShader = std::make_shared<VertexShader>(resourceDesc, FogShader::GetVertexShaderCode(), defaultLayout, 2);
@@ -103,23 +103,19 @@ void dx3d::Game::createRenderingResources()
 
     m_transformConstantBuffer = std::make_shared<ConstantBuffer>(sizeof(TransformationMatrices), resourceDesc);
 
-    // ---- START: This is the critical fix for your texture shader ----
-
-    // Define the texture layout for shaders that use Position and TexCoord
+    //def texture layout for shaders that use Position and TexCoord
     D3D11_INPUT_ELEMENT_DESC textureLayout[] = {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        // This correctly describes the layout for a vertex with texture coordinates.
-        // The offset (12) tells DirectX to look for the texcoord data right after the position data (3 floats * 4 bytes = 12 bytes).
         { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
     };
 
-    // Create the texture vertex shader with the correct layout
+    //texture vertex shader
     m_textureVertexShader = std::make_shared<VertexShader>(resourceDesc, TextureShader::GetVertexShaderCode(), defaultLayout, 2);
     m_texturePixelShader = std::make_shared<PixelShader>(resourceDesc, TextureShader::GetPixelShaderCode());
 
-    // Load the camera icon texture using a simple relative path
+    //load texture using a simple relative path
     int width, height, channels;
-    const char* imagePath = "Resources/cam.png"; // Clean and simple!
+    const char* imagePath = "Resources/cam.png";
     unsigned char* image_data = stbi_load(imagePath, &width, &height, &channels, 4);
     if (!image_data)
     {
@@ -129,7 +125,7 @@ void dx3d::Game::createRenderingResources()
     }
 
     
-    // Create the texture resource
+    //texture resource
     D3D11_TEXTURE2D_DESC textureDesc = {};
     textureDesc.Width = width;
     textureDesc.Height = height;
@@ -142,29 +138,30 @@ void dx3d::Game::createRenderingResources()
 
     D3D11_SUBRESOURCE_DATA subresourceData = {};
     subresourceData.pSysMem = image_data;
-    subresourceData.SysMemPitch = width * 4; // 4 bytes per pixel (RGBA)
+    subresourceData.SysMemPitch = width * 4; //4 bytes per pixel because (RGBA)
 
     
     ID3D11Texture2D* texture = nullptr;
     HRESULT hr = device->CreateTexture2D(&textureDesc, &subresourceData, &texture);
 
-    stbi_image_free(image_data); // Free the image data from CPU memory
+    stbi_image_free(image_data);
+    //important: Free the image data from CPU memory
 
     if (FAILED(hr))
     {
         DX3DLogErrorAndThrow("Failed to create 2D texture.");
     }
 
-    // Create the shader resource view from the texture
+    //shader resource view from the texture
     hr = device->CreateShaderResourceView(texture, nullptr, &m_cameraIconTexture);
-    texture->Release(); // We don't need the texture object itself anymore
+    texture->Release();
 
     if (FAILED(hr))
     {
         DX3DLogErrorAndThrow("Failed to create shader resource view.");
     }
 
-    // Create a sampler state
+    //sampler state
     D3D11_SAMPLER_DESC samplerDesc = {};
     samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
     samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -334,7 +331,7 @@ void dx3d::Game::createRenderingResources()
     // Create a rasterizer state that disables back-face culling
     D3D11_RASTERIZER_DESC rasterizerDesc = {};
     rasterizerDesc.FillMode = D3D11_FILL_SOLID;
-    rasterizerDesc.CullMode = D3D11_CULL_NONE; // This is the key change!
+    rasterizerDesc.CullMode = D3D11_CULL_NONE;
     rasterizerDesc.FrontCounterClockwise = TRUE;
     device->CreateRasterizerState(&rasterizerDesc, &m_noCullRasterizerState);
 
@@ -496,11 +493,24 @@ void dx3d::Game::renderScene(Camera& camera, const Matrix4x4& projMatrix, Render
         deviceContext.clearDepthBuffer(*m_depthBuffer);
         deviceContext.setRenderTargetsWithDepth(swapChain, *m_depthBuffer);
     }
+    
+    if (renderTarget)
+    {
+        const auto& viewportSize = renderTarget->getSize();
+        deviceContext.setViewportSize(viewportSize.width, viewportSize.height);
+    }
+    else
+    {
+        const auto& windowSize = m_display->getSize();
+        deviceContext.setViewportSize(windowSize.width, windowSize.height);
+    }
 
+    /*
     deviceContext.setViewportSize(
         renderTarget ? renderTarget->getShaderResourceView() ? 640 : m_display->getSize().width : m_display->getSize().width,
         renderTarget ? renderTarget->getShaderResourceView() ? 480 : m_display->getSize().height : m_display->getSize().height
     );
+    */
 
     ID3D11Buffer* transformCb = m_transformConstantBuffer->getBuffer();
     d3dContext->VSSetConstantBuffers(0, 1, &transformCb);
@@ -585,12 +595,11 @@ void dx3d::Game::renderScene(Camera& camera, const Matrix4x4& projMatrix, Render
                 transformMatrices.projection = Matrix4x4::fromXMMatrix(DirectX::XMMatrixTranspose(projMatrix.toXMMatrix()));
                 m_transformConstantBuffer->update(deviceContext, &transformMatrices);
 
-                // Draw the gizmo
                 deviceContext.drawIndexed(CameraGizmo::GetIndexCount(), 0, 0);
             }
 
-            // --- 2. Render the 2D Camera Icon with All Correct States ---
-            {
+            
+            {// --- 2. Render the 2D Camera Icon ---
                 // Store original states
                 ID3D11RasterizerState* originalRasterizerState = nullptr;
                 d3dContext->RSGetState(&originalRasterizerState);
@@ -600,22 +609,22 @@ void dx3d::Game::renderScene(Camera& camera, const Matrix4x4& projMatrix, Render
                 d3dContext->RSSetState(m_noCullRasterizerState);
                 d3dContext->OMSetDepthStencilState(m_particleDepthState, 0);
 
-                // Set shaders and resources. No need to switch input layout anymore.
+                // Set shaders and resources
                 deviceContext.setVertexShader(m_textureVertexShader->getShader());
                 deviceContext.setPixelShader(m_texturePixelShader->getShader());
-                deviceContext.setInputLayout(m_textureVertexShader->getInputLayout()); // This is still important!
+                deviceContext.setInputLayout(m_textureVertexShader->getInputLayout());
                 deviceContext.setVertexBuffer(*m_cameraIconVertexBuffer);
                 deviceContext.setIndexBuffer(*m_cameraIconIndexBuffer);
                 d3dContext->PSSetShaderResources(0, 1, &m_cameraIconTexture);
                 d3dContext->PSSetSamplers(0, 1, &m_samplerState);
 
-                // Set transformations for the icon (billboarding)
+                // Set transformations for the icon w/ billboarding effect
                 TransformationMatrices transformMatrices;
                 Vector3 iconPos = gameObject->getPosition();
-                Vector3 finalIconPos = Vector3(iconPos.x, iconPos.y + 1.5f, iconPos.z);
                 Vector3 camToIconDir = iconPos - camera.getPosition();
                 float angleY = atan2(camToIconDir.x, camToIconDir.z);
-                Matrix4x4 world = Matrix4x4::CreateScale({ 0.75f, 0.75f, 0.75f }) * Matrix4x4::CreateRotationY(angleY) * Matrix4x4::CreateTranslation(finalIconPos);
+                Matrix4x4 world = Matrix4x4::CreateScale({ 0.75f, 0.75f, 0.75f }) * 
+                    Matrix4x4::CreateRotationY(angleY) * Matrix4x4::CreateTranslation(iconPos);
 
                 transformMatrices.world = Matrix4x4::fromXMMatrix(DirectX::XMMatrixTranspose(world.toXMMatrix()));
                 transformMatrices.view = Matrix4x4::fromXMMatrix(DirectX::XMMatrixTranspose(camera.getViewMatrix().toXMMatrix()));
@@ -687,15 +696,15 @@ void dx3d::Game::renderUI()
     float windowWidth = io.DisplaySize.x;
     float windowHeight = io.DisplaySize.y;
 
-    float viewportHeight = windowHeight * 0.85f; // 85% for viewports
-    float settingsHeight = windowHeight * 0.15f; // 15% for settings
-    float halfWidth = windowWidth * 0.5f;
+    float leftPanelWidth = windowWidth * 0.75f;
+    float viewportHeight = windowHeight * 0.5f;
+    float rightPanelWidth = windowWidth - leftPanelWidth;
 
-    // Scene View - Left Half
+    // Scene View - Top Left
     ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSize(ImVec2(halfWidth, viewportHeight));
+    ImGui::SetNextWindowSize(ImVec2(leftPanelWidth, viewportHeight));
     ImGui::Begin("Scene View", nullptr,
-        ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize |
         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus);
 
     ImVec2 sceneViewportSize = ImGui::GetContentRegionAvail();
@@ -723,9 +732,9 @@ void dx3d::Game::renderUI()
     }
     ImGui::End();
 
-    // Game View - Right Half
-    ImGui::SetNextWindowPos(ImVec2(halfWidth, 0));
-    ImGui::SetNextWindowSize(ImVec2(halfWidth, viewportHeight));
+    // Game View - Bottom Left
+    ImGui::SetNextWindowPos(ImVec2(0, viewportHeight));
+    ImGui::SetNextWindowSize(ImVec2(leftPanelWidth, viewportHeight));
     ImGui::Begin("Game View", nullptr,
         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus);
@@ -742,197 +751,185 @@ void dx3d::Game::renderUI()
     }
     ImGui::End();
 
-    // Settings Panel - Bottom Full Width
-    ImGui::SetNextWindowPos(ImVec2(0, viewportHeight));
-    ImGui::SetNextWindowSize(ImVec2(windowWidth, settingsHeight));
+    // Settings Panel - Right Full Height
+    ImGui::SetNextWindowPos(ImVec2(leftPanelWidth, 0));
+    ImGui::SetNextWindowSize(ImVec2(rightPanelWidth, windowHeight));
     ImGui::Begin("Settings", nullptr,
         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus);
 
-    // Create columns for organized settings layout
-    ImGui::Columns(3, "SettingsColumns", true);
-
-    // Column 1: Inspector
-    ImGui::Text("Inspector");
-    ImGui::Separator();
-    if (auto selected = m_selectionSystem->getSelectedObject())
+    // Inspector Section
+    if (ImGui::CollapsingHeader("Inspector", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        ImGui::Text("Selected: %s", typeid(*selected).name());
-
-        Vector3 pos = selected->getPosition();
-        if (ImGui::DragFloat3("Position", &pos.x, 0.1f))
+        if (auto selected = m_selectionSystem->getSelectedObject())
         {
-            selected->setPosition(pos);
-        }
+            ImGui::Text("Selected: %s", typeid(*selected).name());
 
-        Vector3 rot = selected->getRotation();
-        if (ImGui::DragFloat3("Rotation", &rot.x, 0.01f))
-        {
-            selected->setRotation(rot);
-        }
-
-        Vector3 scale = selected->getScale();
-        if (ImGui::DragFloat3("Scale", &scale.x, 0.1f))
-        {
-            selected->setScale(scale);
-        }
-
-        if (auto camera = std::dynamic_pointer_cast<CameraObject>(selected))
-        {
-            ImGui::Separator();
-            ImGui::Text("Camera Settings");
-
-            float fov = camera->getFOV() * 180.0f / 3.14159265f;
-            if (ImGui::SliderFloat("FOV", &fov, 30.0f, 120.0f))
+            if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
             {
-                camera->setFOV(fov * 3.14159265f / 180.0f);
+                Vector3 pos = selected->getPosition();
+                if (ImGui::DragFloat3("Position", &pos.x, 0.1f))
+                {
+                    selected->setPosition(pos);
+                }
+
+                Vector3 rot = selected->getRotation();
+                if (ImGui::DragFloat3("Rotation", &rot.x, 0.01f))
+                {
+                    selected->setRotation(rot);
+                }
+
+                Vector3 scale = selected->getScale();
+                if (ImGui::DragFloat3("Scale", &scale.x, 0.1f))
+                {
+                    selected->setScale(scale);
+                }
             }
 
-            float nearPlane = camera->getNearPlane();
-            if (ImGui::DragFloat("Near", &nearPlane, 0.01f, 0.01f, 10.0f))
+            if (auto camera = std::dynamic_pointer_cast<CameraObject>(selected))
             {
-                camera->setNearPlane(nearPlane);
-            }
+                if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
+                {
+                    float fov = camera->getFOV() * 180.0f / 3.14159265f;
+                    if (ImGui::SliderFloat("FOV", &fov, 30.0f, 120.0f))
+                    {
+                        camera->setFOV(fov * 3.14159265f / 180.0f);
+                    }
 
-            float farPlane = camera->getFarPlane();
-            if (ImGui::DragFloat("Far", &farPlane, 1.0f, 10.0f, 1000.0f))
-            {
-                camera->setFarPlane(farPlane);
-            }
+                    float nearPlane = camera->getNearPlane();
+                    if (ImGui::DragFloat("Near", &nearPlane, 0.01f, 0.01f, 10.0f))
+                    {
+                        camera->setNearPlane(nearPlane);
+                    }
 
-            if (ImGui::Button("Align with View"))
+                    float farPlane = camera->getFarPlane();
+                    if (ImGui::DragFloat("Far", &farPlane, 1.0f, 10.0f, 1000.0f))
+                    {
+                        camera->setFarPlane(farPlane);
+                    }
+
+                    if (ImGui::Button("Align with View"))
+                    {
+                        camera->alignWithView(*m_sceneCamera);
+                    }
+                }
+            }
+        }
+        else
+        {
+            ImGui::Text("No object selected");
+        }
+    }
+
+    // Effects Settings Section
+    if (ImGui::CollapsingHeader("Effects", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        if (ImGui::CollapsingHeader("Fog", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::Checkbox("Enable Fog", &m_fogDesc.enabled);
+            ImGui::SliderFloat("Fog Start", &m_fogDesc.start, 0.1f, 50.0f);
+            ImGui::SliderFloat("Fog End", &m_fogDesc.end, 1.0f, 100.0f);
+            ImGui::ColorEdit3("Fog Color", &m_fogDesc.color.x);
+        }
+
+        if (ImGui::CollapsingHeader("Snow Particles", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            bool snowSettingsChanged = false;
+
+            if (ImGui::Checkbox("Active", &m_snowConfig.active))
+                snowSettingsChanged = true;
+
+            if (ImGui::DragFloat3("Position", &m_snowConfig.position.x, 0.5f))
+                snowSettingsChanged = true;
+
+            if (ImGui::ColorEdit4("Start Color", &m_snowConfig.startColor.x))
+                snowSettingsChanged = true;
+
+            if (ImGui::ColorEdit4("End Color", &m_snowConfig.endColor.x))
+                snowSettingsChanged = true;
+
+            if (ImGui::SliderFloat("Emission Rate", &m_snowConfig.emissionRate, 1.0f, 200.0f))
+                snowSettingsChanged = true;
+
+            if (ImGui::SliderFloat("Start Size", &m_snowConfig.startSize, 0.1f, 2.0f))
+                snowSettingsChanged = true;
+
+            if (ImGui::SliderFloat("End Size", &m_snowConfig.endSize, 0.05f, 1.0f))
+                snowSettingsChanged = true;
+
+            if (ImGui::SliderFloat("Lifetime", &m_snowConfig.lifetime, 1.0f, 20.0f))
+                snowSettingsChanged = true;
+
+            if (snowSettingsChanged)
             {
-                camera->alignWithView(*m_sceneCamera);
+                updateSnowEmitter();
             }
         }
     }
-    else
+
+    // Camera Controls Section
+    if (ImGui::CollapsingHeader("Camera Controls", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        ImGui::Text("No object selected");
+        // Toggle Gizmos On/Off
+        ImGui::Checkbox("Show Gizmos", &m_showGizmos);
+
+        if (ImGui::CollapsingHeader("Scene Camera", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::Text("Speed: %.1f", m_cameraSpeed);
+            ImGui::SliderFloat("##CameraSpeed", &m_cameraSpeed, 1.0f, 20.0f);
+
+            ImGui::Text("Mouse Sens: %.2f", m_mouseSensitivity);
+            ImGui::SliderFloat("##MouseSens", &m_mouseSensitivity, 0.1f, 2.0f);
+
+            if (ImGui::Button("Reset Scene Camera"))
+            {
+                m_sceneCamera->setPosition(Vector3(15.0f, 10.0f, -15.0f));
+                m_sceneCamera->lookAt(Vector3(0.0f, 2.0f, 0.0f));
+            }
+        }
+
+        if (ImGui::CollapsingHeader("Game Camera", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            Vector3 gameCamPos = m_gameCamera->getPosition();
+            if (ImGui::DragFloat3("Position", &gameCamPos.x, 0.1f))
+            {
+                m_gameCamera->setPosition(gameCamPos);
+            }
+
+            Vector3 gameCamRot = m_gameCamera->getRotation();
+            Vector3 gameCamRotDeg = Vector3(
+                gameCamRot.x * 180.0f / 3.14159265f,
+                gameCamRot.y * 180.0f / 3.14159265f,
+                gameCamRot.z * 180.0f / 3.14159265f
+            );
+            if (ImGui::DragFloat3("Rotation", &gameCamRotDeg.x, 1.0f))
+            {
+                Vector3 newRotRad = Vector3(
+                    gameCamRotDeg.x * 3.14159265f / 180.0f,
+                    gameCamRotDeg.y * 3.14159265f / 180.0f,
+                    gameCamRotDeg.z * 3.14159265f / 180.0f
+                );
+                m_gameCamera->setRotation(newRotRad);
+            }
+
+            if (ImGui::Button("Reset Game Camera"))
+            {
+                m_gameCamera->setPosition(Vector3(12.0f, 8.0f, -12.0f));
+                m_gameCamera->setRotation(Vector3(0.0f, 0.0f, 0.0f));
+                m_gameCamera->getCamera().lookAt(Vector3(0.0f, 2.0f, 0.0f));
+            }
+
+            if (ImGui::Button("Align Game Camera To View"))
+            {
+                m_gameCamera->alignWithView(*m_sceneCamera.get());
+            }
+        }
     }
 
-    ImGui::NextColumn();
-
-    // Column 2: Effects Settings
-    ImGui::Text("Effects Settings");
-    ImGui::Separator();
-
-    // Fog Settings
-    ImGui::Text("Fog");
-    ImGui::Checkbox("Enable Fog", &m_fogDesc.enabled);
-    ImGui::SliderFloat("Fog Start", &m_fogDesc.start, 0.1f, 50.0f);
-    ImGui::SliderFloat("Fog End", &m_fogDesc.end, 1.0f, 100.0f);
-    ImGui::ColorEdit3("Fog Color", &m_fogDesc.color.x);
-
-    ImGui::Separator();
-
-    // Snow Particle Settings
-    ImGui::Text("Snow Particles");
-    bool snowSettingsChanged = false;
-
-    if (ImGui::Checkbox("Active##Snow", &m_snowConfig.active))
-        snowSettingsChanged = true;
-
-    if (ImGui::DragFloat3("Position##Snow", &m_snowConfig.position.x, 0.5f))
-        snowSettingsChanged = true;
-
-    if (ImGui::ColorEdit4("Start Color##Snow", &m_snowConfig.startColor.x))
-        snowSettingsChanged = true;
-
-    if (ImGui::ColorEdit4("End Color##Snow", &m_snowConfig.endColor.x))
-        snowSettingsChanged = true;
-
-    if (ImGui::SliderFloat("Emission Rate##Snow", &m_snowConfig.emissionRate, 1.0f, 200.0f))
-        snowSettingsChanged = true;
-
-    if (ImGui::SliderFloat("Start Size##Snow", &m_snowConfig.startSize, 0.1f, 2.0f))
-        snowSettingsChanged = true;
-
-    if (ImGui::SliderFloat("End Size##Snow", &m_snowConfig.endSize, 0.05f, 1.0f))
-        snowSettingsChanged = true;
-
-    if (ImGui::SliderFloat("Lifetime##Snow", &m_snowConfig.lifetime, 1.0f, 20.0f))
-        snowSettingsChanged = true;
-
-    if (snowSettingsChanged)
-    {
-        updateSnowEmitter();
-    }
-
-    ImGui::NextColumn();
-
-    // Column 3: Camera Controls
-    ImGui::Text("Camera Controls");
-    ImGui::Separator();
-
-    // Toggle Gizmos On/Off
-    ImGui::Checkbox("Show Gizmos", &m_showGizmos); 
-
-    // Scene Camera Controls
-    ImGui::Text("Scene Camera");
-    ImGui::Text("Speed: %.1f", m_cameraSpeed);
-    if (ImGui::SliderFloat("##CameraSpeed", &m_cameraSpeed, 1.0f, 20.0f))
-    {
-        // Camera speed updated
-    }
-
-    ImGui::Text("Mouse Sens: %.2f", m_mouseSensitivity);
-    if (ImGui::SliderFloat("##MouseSens", &m_mouseSensitivity, 0.1f, 2.0f))
-    {
-        // Mouse sensitivity updated
-    }
-
-    if (ImGui::Button("Reset Scene Camera"))
-    {
-        m_sceneCamera->setPosition(Vector3(15.0f, 10.0f, -15.0f));
-        m_sceneCamera->lookAt(Vector3(0.0f, 2.0f, 0.0f));
-    }
-
-    //
-    //m_gameCamera->setPosition(m_sceneCamera->getPosition());
-    //m_gameCamera->lookAt(m_sceneCamera->getPosition());
-
-    ImGui::Separator();
-
-    // Game Camera Controls
-    ImGui::Text("Game Camera");
-    Vector3 gameCamPos = m_gameCamera->getPosition();
-    if (ImGui::DragFloat3("Position##GameCam", &gameCamPos.x, 0.1f))
-    {
-        m_gameCamera->setPosition(gameCamPos);
-    }
-
-    Vector3 gameCamRot = m_gameCamera->getRotation();
-    Vector3 gameCamRotDeg = Vector3(
-        gameCamRot.x * 180.0f / 3.14159265f,
-        gameCamRot.y * 180.0f / 3.14159265f,
-        gameCamRot.z * 180.0f / 3.14159265f
-    );
-    if (ImGui::DragFloat3("Rotation##GameCam", &gameCamRotDeg.x, 1.0f))
-    {
-        Vector3 newRotRad = Vector3(
-            gameCamRotDeg.x * 3.14159265f / 180.0f,
-            gameCamRotDeg.y * 3.14159265f / 180.0f,
-            gameCamRotDeg.z * 3.14159265f / 180.0f
-        );
-        m_gameCamera->setRotation(newRotRad);
-    }
-
-    if (ImGui::Button("Reset Game Camera"))
-    {
-        m_gameCamera->setPosition(Vector3(12.0f, 8.0f, -12.0f));
-        m_gameCamera->setRotation(Vector3(0.0f, 0.0f, 0.0f));
-        m_gameCamera->getCamera().lookAt(Vector3(0.0f, 2.0f, 0.0f));
-    }
-
-    if (ImGui::Button("Align Game Camera To View"))
-    {
-        m_gameCamera->alignWithView(*m_sceneCamera.get());
-    }
-
-    ImGui::Columns(1);
     ImGui::End();
 }
+
+
 
 void dx3d::Game::render()
 {

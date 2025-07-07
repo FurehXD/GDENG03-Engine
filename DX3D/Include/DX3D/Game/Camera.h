@@ -38,6 +38,7 @@ namespace dx3d
         const Vector3& getUp() const { return m_up; }
         float getYaw() const { return m_yaw; }
         float getPitch() const { return m_pitch; }
+        float getRoll() const { return m_roll; }
 
         Vector3 getForward();
 

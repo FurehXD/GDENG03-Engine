@@ -104,3 +104,8 @@ void dx3d::RenderTexture::setAsRenderTarget(DeviceContext& deviceContext)
     ID3D11RenderTargetView* rtv = m_renderTargetView.Get();
     d3dContext->OMSetRenderTargets(1, &rtv, m_depthStencilView.Get());
 }
+
+dx3d::Rect dx3d::RenderTexture::getSize() const
+{
+    return { (i32) m_width, (i32) m_height };
+}

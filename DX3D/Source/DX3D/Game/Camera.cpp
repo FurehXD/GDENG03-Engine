@@ -174,18 +174,30 @@ void Camera::updateVectors()
     }
 
     // Calculate up vector (cross product of forward and right)
-    m_up.x = m_forward.y * m_right.z - m_forward.z * m_right.y;
-    m_up.y = m_forward.z * m_right.x - m_forward.x * m_right.z;
-    m_up.z = m_forward.x * m_right.y - m_forward.y * m_right.x;
+    Vector3 tempUp;
+    tempUp.x = m_forward.y * m_right.z - m_forward.z * m_right.y;
+    tempUp.y = m_forward.z * m_right.x - m_forward.x * m_right.z;
+    tempUp.z = m_forward.x * m_right.y - m_forward.y * m_right.x;
 
-    // Normalize up vector
-    length = std::sqrt(m_up.x * m_up.x + m_up.y * m_up.y + m_up.z * m_up.z);
+    // Normalize temp up vector
+    length = std::sqrt(tempUp.x * tempUp.x + tempUp.y * tempUp.y + tempUp.z * tempUp.z);
     if (length > 0.0f)
     {
-        m_up.x /= length;
-        m_up.y /= length;
-        m_up.z /= length;
+        tempUp.x /= length;
+        tempUp.y /= length;
+        tempUp.z /= length;
     }
+
+    float cosRoll = std::cos(m_roll);
+    float sinRoll = std::sin(m_roll);
+
+    m_up.x = tempUp.x * cosRoll + m_right.x * sinRoll;
+    m_up.y = tempUp.y * cosRoll + m_right.y * sinRoll;
+    m_up.z = tempUp.z * cosRoll + m_right.z * sinRoll;
+
+    m_right.x = m_right.x * cosRoll - tempUp.x * sinRoll;
+    m_right.y = m_right.y * cosRoll - tempUp.y * sinRoll;
+    m_right.z = m_right.z * cosRoll - tempUp.z * sinRoll;
 }
 
 void Camera::updateViewMatrix()

@@ -566,47 +566,8 @@ void dx3d::Game::renderScene(Camera& camera, const Matrix4x4& projMatrix, Render
             deviceContext.drawIndexed(Plane::GetIndexCount(), 0, 0);
         }
         else if (isCamera && isSceneView && m_showGizmos) {
-            /*
-            // Render the camera gizmo
-            deviceContext.setVertexBuffer(*m_cameraGizmoVertexBuffer);
-            deviceContext.setIndexBuffer(*m_cameraGizmoIndexBuffer);
-
-            TransformationMatrices transformMatrices;
-            // We want the gizmo to have the same position and rotation as the camera, but not the scale.
-            Matrix4x4 world = Matrix4x4::CreateRotationX(gameObject->getRotation().x) *
-                Matrix4x4::CreateRotationY(gameObject->getRotation().y) *
-                Matrix4x4::CreateRotationZ(gameObject->getRotation().z) *
-                Matrix4x4::CreateTranslation(gameObject->getPosition());
-
-            transformMatrices.world = Matrix4x4::fromXMMatrix(DirectX::XMMatrixTranspose(world.toXMMatrix()));
-            transformMatrices.view = Matrix4x4::fromXMMatrix(DirectX::XMMatrixTranspose(camera.getViewMatrix().toXMMatrix()));
-            transformMatrices.projection = Matrix4x4::fromXMMatrix(DirectX::XMMatrixTranspose(projMatrix.toXMMatrix()));
-
-            m_transformConstantBuffer->update(deviceContext, &transformMatrices);
-
-            // Use the fog shader to render the gizmo with vertex colors
-            FogMaterialConstants fmc = {};
-            fmc.useVertexColor = true;
-            m_materialConstantBuffer->update(deviceContext, &fmc);
-
-            deviceContext.setVertexShader(m_fogVertexShader->getShader());
-            deviceContext.setPixelShader(m_fogPixelShader->getShader());
-            deviceContext.setInputLayout(m_fogVertexShader->getInputLayout());
-
-            deviceContext.drawIndexed(CameraGizmo::GetIndexCount(), 0, 0);
-            */
-
-            // --- 1. Render the 3D Camera Gizmo (as before) ---
-            {
-                // Set the shaders and input layout for the gizmo
-                deviceContext.setVertexShader(m_fogVertexShader->getShader());
-                deviceContext.setPixelShader(m_fogPixelShader->getShader());
-                deviceContext.setInputLayout(m_fogVertexShader->getInputLayout());
-
-                // Set material properties for the gizmo
-                FogMaterialConstants fmc = {};
-                fmc.useVertexColor = true;
-                m_materialConstantBuffer->update(deviceContext, &fmc);
+            {// --- 1. Render the 3D Camera Gizmo ---
+           
 
                 // Set gizmo geometry
                 deviceContext.setVertexBuffer(*m_cameraGizmoVertexBuffer);

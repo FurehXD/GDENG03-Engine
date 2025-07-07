@@ -13,7 +13,6 @@ void CreateArrowVertices(std::vector<Vertex>& vertices, const Vector3& direction
     const float cylinderRadius = 0.02f;
     const float coneLength = 0.2f;
     const float codeRadius = 0.08f;
-    const ui32 segments = SEGMENTS;
 
     Vector3 cylinderEnd = direction * cylinderLength;
     Vector3 coneBase = cylinderEnd;
@@ -27,9 +26,9 @@ void CreateArrowVertices(std::vector<Vertex>& vertices, const Vector3& direction
     up = Vector3::cross(direction, right);
 
     // cylinder Vertices
-    for (ui32 i = 0; i <= segments; ++i)
+    for (ui32 i = 0; i <= SEGMENTS; ++i)
     {
-        float angle = i * 2.0f * 3.14159265f / segments;
+        float angle = i * 2.0f * 3.14159265f / SEGMENTS;
         Vector3 offset = (right * cos(angle) + up * sin(angle)) * cylinderRadius;
 
         vertices.push_back({ {offset.x, offset.y, offset.z}, {color.x, color.y, color.z, color.w} });
@@ -39,9 +38,9 @@ void CreateArrowVertices(std::vector<Vertex>& vertices, const Vector3& direction
 
     // cone Vertices
     vertices.push_back({ {coneBase.x, coneBase.y, coneBase.z}, {color.x, color.y, color.z, color.w} }); // Center of base
-    for (ui32 i = 0; i <= segments; ++i)
+    for (ui32 i = 0; i <= SEGMENTS; ++i)
     {
-        float angle = i * 2.0f * 3.14159265f / segments;
+        float angle = i * 2.0f * 3.14159265f / SEGMENTS;
         Vector3 offset = (right * cos(angle) + up * sin(angle)) * codeRadius;
 
         Vector3 coneBasePosition = coneBase + offset;
@@ -73,11 +72,10 @@ std::shared_ptr<VertexBuffer> CameraGizmo::CreateVertexBuffer(const GraphicsReso
 // Helper function to create the indices for a single arrow
 void CreateArrowIndices(std::vector<ui32>& indices, ui32 baseVertexOffset)
 {
-    const ui32 segments = SEGMENTS;
-    ui32 cylinderVertexCount = (segments + 1) * 2;
+    ui32 cylinderVertexCount = (SEGMENTS + 1) * 2;
 
     // cylinder Indices
-    for (ui32 i = 0; i < segments; ++i)
+    for (ui32 i = 0; i < SEGMENTS; ++i)
     {
         ui32 currentBase = baseVertexOffset + i * 2;
         ui32 nextBase = baseVertexOffset + (i + 1) * 2;
@@ -91,8 +89,8 @@ void CreateArrowIndices(std::vector<ui32>& indices, ui32 baseVertexOffset)
 
     // cone Indices (Cone)
     ui32 coneBaseCenter = baseVertexOffset + cylinderVertexCount;
-    ui32 coneTip = coneBaseCenter + segments + 2;
-    for (ui32 i = 0; i < segments; ++i)
+    ui32 coneTip = coneBaseCenter + SEGMENTS + 2;
+    for (ui32 i = 0; i < SEGMENTS; ++i)
     {
         ui32 current = coneBaseCenter + 1 + i;
         ui32 next = coneBaseCenter + 1 + i + 1;

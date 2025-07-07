@@ -5,7 +5,7 @@
 #include <DX3D/Math/Math.h>
 #include <memory>
 
-#define SEGMENTS_VALUE 1
+#define SEGMENTS_VALUE 12
 // If SEGMENTS_VALUE is less than 2, it will be clamped to 2.
 #define SEGMENTS ((SEGMENTS_VALUE < 2) ? 2 : SEGMENTS_VALUE)
 

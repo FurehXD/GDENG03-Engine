@@ -23,7 +23,7 @@ namespace dx3d
         static std::shared_ptr<IndexBuffer> CreateIndexBuffer(const GraphicsResourceDesc& resourceDesc);
 
         // Get the number of indices for a camera gizmo
-        // 36 because there are 3 arrows ((6 indices for a square for the cylinder + 6 indices for a square for the cone) *3)
+        // Multiplied by 36 because there are 3 arrows ((6 indices for a square for the cylinder + 6 indices for a square for the cone) * 3 arrows)
         static ui32 GetIndexCount() { return SEGMENTS * 36; }
     };
 }

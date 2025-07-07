@@ -21,16 +21,10 @@ void CreateArrowVertices(std::vector<Vertex>& vertices, const Vector3& direction
 
     // Create orthonormal basis vectors for the arrow's orientation
     Vector3 up = (abs(direction.y) < 0.9f) ? Vector3(0, 1, 0) : Vector3(1, 0, 0);
+
     Vector3 right = Vector3::cross(up, direction);
-    /*right.x = up.y * direction.z - up.z * direction.y;
-    right.y = up.z * direction.x - up.x * direction.z;
-    right.z = up.x * direction.y - up.y * direction.x;*/
 
     up = Vector3::cross(direction, right);
-   /* up.x = direction.y * right.z - direction.z * right.y;
-    up.y = direction.z * right.x - direction.x * right.z;
-    up.z = direction.x * right.y - direction.y * right.x;*/
-
 
     // cylinder Vertices
     for (ui32 i = 0; i <= segments; ++i)

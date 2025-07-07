@@ -46,7 +46,6 @@ void CreateArrowVertices(std::vector<Vertex>& vertices, const Vector3& direction
         Vector3 coneBasePosition = coneBase + offset;
         vertices.push_back({ {coneBasePosition.x, coneBasePosition.y, coneBasePosition.z}, {color.x, color.y, color.z, color.w} });
     }
-    // Corrected push_back call
     vertices.push_back({ {coneTip.x, coneTip.y, coneTip.z}, {color.x, color.y, color.z, color.w} }); // Tip of cone
 }
 

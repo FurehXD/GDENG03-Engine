@@ -38,7 +38,7 @@ void CreateArrowVertices(std::vector<Vertex>& vertices, const Vector3& direction
         vertices.push_back({ {cylinderTipPosition.x, cylinderTipPosition.y, cylinderTipPosition.z}, {color.x, color.y, color.z, color.w} });
     }
 
-    // cone Vertices (Cone)
+    // cone Vertices
     vertices.push_back({ {coneBase.x, coneBase.y, coneBase.z}, {color.x, color.y, color.z, color.w} }); // Center of base
     for (ui32 i = 0; i <= segments; ++i)
     {

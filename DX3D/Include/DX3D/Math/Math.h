@@ -27,6 +27,26 @@ namespace dx3d
         Vector3& operator+=(const Vector3& other) { x += other.x; y += other.y; z += other.z; return *this; }
         Vector3& operator-=(const Vector3& other) { x -= other.x; y -= other.y; z -= other.z; return *this; }
         Vector3& operator*=(float scalar) { x *= scalar; y *= scalar; z *= scalar; return *this; }
+
+        // Calculates the cross product of two vectors.
+        static Vector3 cross(const Vector3& v1, const Vector3& v2)
+        {
+            return Vector3(
+                v1.y * v2.z - v1.z * v2.y,
+                v1.z * v2.x - v1.x * v2.z,
+                v1.x * v2.y - v1.y * v2.x
+            );
+        }
+
+        // Calculates the cross product of this vector with another.
+        Vector3 cross(const Vector3& other) const
+        {
+            return Vector3(
+                y * other.z - z * other.y,
+                z * other.x - x * other.z,
+                x * other.y - y * other.x
+            );
+        }
     };
 
     struct Vector4

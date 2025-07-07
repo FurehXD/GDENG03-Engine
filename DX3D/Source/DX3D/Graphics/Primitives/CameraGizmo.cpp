@@ -1,3 +1,6 @@
+#define _USE_MATH_DEFINES 
+#include <cmath>
+
 #include <DX3D/Graphics/Primitives/CameraGizmo.h>
 #include <DX3D/Graphics/VertexBuffer.h>
 #include <DX3D/Graphics/IndexBuffer.h>
@@ -28,7 +31,7 @@ void CreateArrowVertices(std::vector<Vertex>& vertices, const Vector3& direction
     // cylinder Vertices
     for (ui32 i = 0; i <= SEGMENTS; ++i)
     {
-        float angle = i * 2.0f * 3.14159265f / SEGMENTS;
+        float angle = i * 2.0f * M_PI / SEGMENTS;
         Vector3 offset = (right * cos(angle) + up * sin(angle)) * cylinderRadius;
 
         vertices.push_back({ {offset.x, offset.y, offset.z}, {color.x, color.y, color.z, color.w} });
@@ -40,7 +43,7 @@ void CreateArrowVertices(std::vector<Vertex>& vertices, const Vector3& direction
     vertices.push_back({ {coneBase.x, coneBase.y, coneBase.z}, {color.x, color.y, color.z, color.w} }); // Center of base
     for (ui32 i = 0; i <= SEGMENTS; ++i)
     {
-        float angle = i * 2.0f * 3.14159265f / SEGMENTS;
+        float angle = i * 2.0f * M_PI / SEGMENTS;
         Vector3 offset = (right * cos(angle) + up * sin(angle)) * codeRadius;
 
         Vector3 coneBasePosition = coneBase + offset;

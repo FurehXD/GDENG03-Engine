@@ -578,7 +578,6 @@ void dx3d::Game::renderScene(Camera& camera, const Matrix4x4& projMatrix, Render
         else if (isCamera && isSceneView && m_showGizmos) {
             {// --- 1. Render the 3D Camera Gizmo ---
            
-
                 // Set gizmo geometry
                 deviceContext.setVertexBuffer(*m_cameraGizmoVertexBuffer);
                 deviceContext.setIndexBuffer(*m_cameraGizmoIndexBuffer);

@@ -9,15 +9,15 @@ using namespace dx3d;
 // Helper function to create the vertices for a single arrow
 void CreateArrowVertices(std::vector<Vertex>& vertices, const Vector3& direction, const Vector4& color)
 {
-    const float shaftLength = 0.8f;
-    const float shaftRadius = 0.02f;
-    const float headLength = 0.2f;
-    const float headRadius = 0.08f;
+    const float cylinderLength = 0.8f;
+    const float cylinderRadius = 0.02f;
+    const float coneLength = 0.2f;
+    const float codeRadius = 0.08f;
     const ui32 segments = 12;
 
-    Vector3 shaftEnd = direction * shaftLength;
-    Vector3 headBase = shaftEnd;
-    Vector3 headTip = direction * (shaftLength + headLength);
+    Vector3 cylinderEnd = direction * cylinderLength;
+    Vector3 coneBase = cylinderEnd;
+    Vector3 coneTip = direction * (cylinderLength + coneLength);
 
     // Create orthonormal basis vectors for the arrow's orientation
     Vector3 up = (abs(direction.y) < 0.9f) ? Vector3(0, 1, 0) : Vector3(1, 0, 0);
@@ -31,31 +31,31 @@ void CreateArrowVertices(std::vector<Vertex>& vertices, const Vector3& direction
     up.z = direction.x * right.y - direction.y * right.x;
 
 
-    // Shaft Vertices
+    // cylinder Vertices
     for (ui32 i = 0; i <= segments; ++i)
     {
         float angle = i * 2.0f * 3.14159265f / segments;
-        Vector3 offset = (right * cos(angle) + up * sin(angle)) * shaftRadius;
+        Vector3 offset = (right * cos(angle) + up * sin(angle)) * cylinderRadius;
 
         // Corrected push_back calls
         vertices.push_back({ {offset.x, offset.y, offset.z}, {color.x, color.y, color.z, color.w} });
-        Vector3 shaftTipPosition = shaftEnd + offset;
-        vertices.push_back({ {shaftTipPosition.x, shaftTipPosition.y, shaftTipPosition.z}, {color.x, color.y, color.z, color.w} });
+        Vector3 cylinderTipPosition = cylinderEnd + offset;
+        vertices.push_back({ {cylinderTipPosition.x, cylinderTipPosition.y, cylinderTipPosition.z}, {color.x, color.y, color.z, color.w} });
     }
 
-    // Head Vertices (Cone)
-    vertices.push_back({ {headBase.x, headBase.y, headBase.z}, {color.x, color.y, color.z, color.w} }); // Center of base
+    // cone Vertices (Cone)
+    vertices.push_back({ {coneBase.x, coneBase.y, coneBase.z}, {color.x, color.y, color.z, color.w} }); // Center of base
     for (ui32 i = 0; i <= segments; ++i)
     {
         float angle = i * 2.0f * 3.14159265f / segments;
-        Vector3 offset = (right * cos(angle) + up * sin(angle)) * headRadius;
+        Vector3 offset = (right * cos(angle) + up * sin(angle)) * codeRadius;
 
         // Corrected push_back call
-        Vector3 headBasePosition = headBase + offset;
-        vertices.push_back({ {headBasePosition.x, headBasePosition.y, headBasePosition.z}, {color.x, color.y, color.z, color.w} });
+        Vector3 coneBasePosition = coneBase + offset;
+        vertices.push_back({ {coneBasePosition.x, coneBasePosition.y, coneBasePosition.z}, {color.x, color.y, color.z, color.w} });
     }
     // Corrected push_back call
-    vertices.push_back({ {headTip.x, headTip.y, headTip.z}, {color.x, color.y, color.z, color.w} }); // Tip of cone
+    vertices.push_back({ {coneTip.x, coneTip.y, coneTip.z}, {color.x, color.y, color.z, color.w} }); // Tip of cone
 }
 
 
@@ -81,9 +81,9 @@ std::shared_ptr<VertexBuffer> CameraGizmo::CreateVertexBuffer(const GraphicsReso
 void CreateArrowIndices(std::vector<ui32>& indices, ui32 baseVertexOffset)
 {
     const ui32 segments = 12;
-    ui32 shaftVertexCount = (segments + 1) * 2;
+    ui32 cylinderVertexCount = (segments + 1) * 2;
 
-    // Shaft Indices
+    // cylinder Indices
     for (ui32 i = 0; i < segments; ++i)
     {
         ui32 currentBase = baseVertexOffset + i * 2;
@@ -96,21 +96,21 @@ void CreateArrowIndices(std::vector<ui32>& indices, ui32 baseVertexOffset)
         indices.push_back(nextBase + 1);
     }
 
-    // Head Indices (Cone)
-    ui32 headBaseCenter = baseVertexOffset + shaftVertexCount;
-    ui32 headTip = headBaseCenter + segments + 2;
+    // cone Indices (Cone)
+    ui32 coneBaseCenter = baseVertexOffset + cylinderVertexCount;
+    ui32 coneTip = coneBaseCenter + segments + 2;
     for (ui32 i = 0; i < segments; ++i)
     {
-        ui32 current = headBaseCenter + 1 + i;
-        ui32 next = headBaseCenter + 1 + i + 1;
+        ui32 current = coneBaseCenter + 1 + i;
+        ui32 next = coneBaseCenter + 1 + i + 1;
         // Base
-        indices.push_back(headBaseCenter);
+        indices.push_back(coneBaseCenter);
         indices.push_back(next);
         indices.push_back(current);
         // Side
         indices.push_back(current);
         indices.push_back(next);
-        indices.push_back(headTip);
+        indices.push_back(coneTip);
     }
 }
 std::shared_ptr<IndexBuffer> CameraGizmo::CreateIndexBuffer(const GraphicsResourceDesc& resourceDesc)

@@ -5,6 +5,8 @@
 #include <DX3D/Math/Math.h>
 #include <memory>
 
+#define SEGMENTS (ui32)12
+
 namespace dx3d
 {
     /*class VertexBuffer;
@@ -19,6 +21,6 @@ namespace dx3d
         static std::shared_ptr<IndexBuffer> CreateIndexBuffer(const GraphicsResourceDesc& resourceDesc);
 
         // Get the number of indices for a camera gizmo
-        static ui32 GetIndexCount() { return 864; } 
+        static ui32 GetIndexCount() { return SEGMENTS * SEGMENTS * 3; }
     };
 }

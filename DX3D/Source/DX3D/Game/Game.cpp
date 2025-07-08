@@ -576,21 +576,21 @@ void dx3d::Game::renderScene(Camera& camera, const Matrix4x4& projMatrix, Render
         }
         else if (isCamera && isSceneView && m_showGizmos) {
             {// --- 1. Render the 3D Camera Gizmo ---
-                // Set the shaders and input layout for the gizmo
+                //set shaders and input layout for the gizmo
                 deviceContext.setVertexShader(m_fogVertexShader->getShader());
                 deviceContext.setPixelShader(m_fogPixelShader->getShader());
                 deviceContext.setInputLayout(m_fogVertexShader->getInputLayout());
 
-                // Set material properties for the gizmo
+                //material properties
                 FogMaterialConstants fmc = {};
                 fmc.useVertexColor = true;
                 m_materialConstantBuffer->update(deviceContext, &fmc);
 
-                // Set gizmo geometry
+                //set geometry
                 deviceContext.setVertexBuffer(*m_cameraGizmoVertexBuffer);
                 deviceContext.setIndexBuffer(*m_cameraGizmoIndexBuffer);
 
-                // Set gizmo transformations
+                //set gizmo transformations
                 TransformationMatrices transformMatrices;
                 Matrix4x4 world = Matrix4x4::CreateRotationX(gameObject->getRotation().x) *
                     Matrix4x4::CreateRotationY(gameObject->getRotation().y) *
@@ -607,16 +607,16 @@ void dx3d::Game::renderScene(Camera& camera, const Matrix4x4& projMatrix, Render
 
             
             {// --- 2. Render the 2D Camera Icon ---
-                // Store original states
+                //store original states
                 ID3D11RasterizerState* originalRasterizerState = nullptr;
                 d3dContext->RSGetState(&originalRasterizerState);
 
-                // Apply states for transparency
+                //spply states for transparency
                 d3dContext->OMSetBlendState(m_alphaBlendState, nullptr, 0xffffffff);
                 d3dContext->RSSetState(m_noCullRasterizerState);
                 d3dContext->OMSetDepthStencilState(m_particleDepthState, 0);
 
-                // Set shaders and resources
+                //shaders and resources
                 deviceContext.setVertexShader(m_textureVertexShader->getShader());
                 deviceContext.setPixelShader(m_texturePixelShader->getShader());
                 deviceContext.setInputLayout(m_textureVertexShader->getInputLayout());
@@ -625,7 +625,7 @@ void dx3d::Game::renderScene(Camera& camera, const Matrix4x4& projMatrix, Render
                 d3dContext->PSSetShaderResources(0, 1, &m_cameraIconTexture);
                 d3dContext->PSSetSamplers(0, 1, &m_samplerState);
 
-                // Set transformations for the icon w/ billboarding effect
+                //set transformations for the icon w/ billboarding effect
                 TransformationMatrices transformMatrices;
                 Vector3 iconPos = gameObject->getPosition();
                 Vector3 camToIconDir = iconPos - camera.getPosition();
@@ -638,10 +638,9 @@ void dx3d::Game::renderScene(Camera& camera, const Matrix4x4& projMatrix, Render
                 transformMatrices.projection = Matrix4x4::fromXMMatrix(DirectX::XMMatrixTranspose(projMatrix.toXMMatrix()));
                 m_transformConstantBuffer->update(deviceContext, &transformMatrices);
 
-                // Draw the icon
                 deviceContext.drawIndexed(CameraIcon::GetIndexCount(), 0, 0);
 
-                // Restore original states
+                //restore original states
                 d3dContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
                 d3dContext->RSSetState(originalRasterizerState);
                 d3dContext->OMSetDepthStencilState(m_solidDepthState, 0);

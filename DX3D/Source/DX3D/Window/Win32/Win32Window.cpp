@@ -53,7 +53,7 @@ dx3d::Window::Window(const WindowDesc& desc) : Base(desc.base), m_size(desc.size
 	RECT rc{ 0,0,m_size.width, m_size.height };
 	AdjustWindowRect(&rc, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU, false);
 
-	m_handle = CreateWindowEx(NULL, MAKEINTATOM(windowClassId), L"PardCode | C++ 3D Game Tutorial Series",
+	m_handle = CreateWindowEx(NULL, MAKEINTATOM(windowClassId), L"S.A.Cao | C++ 3D Game thingy",
 		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU, CW_USEDEFAULT, CW_USEDEFAULT,
 		rc.right - rc.left, rc.bottom - rc.top,
 		NULL, NULL, NULL, NULL);

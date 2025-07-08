@@ -134,110 +134,24 @@ void dx3d::Game::createRenderingResources()
     m_gameObjects.push_back(std::make_shared<Plane>(
         Vector3(0.0f, 0.0f, 0.0f),     
         Vector3(-1.5708f, 0.0f, 0.0f), 
-        Vector3(50.0f, 50.0f, 1.0f)     
+        Vector3(5.0f, 5.0f, 1.0f)     
     ));
     m_objectRotationDeltas.push_back(Vector3(0.0f, 0.0f, 0.0f));
 
-    for (int i = 0; i < 100; ++i) 
-    {
-        // Generate random properties
-        Vector3 position(
-            positionDist(gen),  // Random X
-            heightDist(gen),    // Random height above ground
-            positionDist(gen)   // Random Z
-        );
-
-        Vector3 rotation(
-            rotationDist(gen),
-            rotationDist(gen),
-            rotationDist(gen)
-        );
-
-        Vector3 scale(
-            scaleDist(gen),
-            scaleDist(gen),
-            scaleDist(gen)
-        );
-
-        Vector3 rotationDelta(
-            (rotationDist(gen) - 3.14159f) * 0.5f, // Random rotation speed
-            (rotationDist(gen) - 3.14159f) * 0.5f,
-            (rotationDist(gen) - 3.14159f) * 0.5f
-        );
-
-        // Randomly choose primitive type
-        int primitiveType = typeDist(gen);
-
-        switch (primitiveType)
-        {
-        case 0: // Cube
-            m_gameObjects.push_back(std::make_shared<Cube>(position, rotation, scale));
-            break;
-        case 1: // Sphere
-            m_gameObjects.push_back(std::make_shared<Sphere>(position, rotation, scale));
-            break;
-        case 2: // Cylinder
-            m_gameObjects.push_back(std::make_shared<Cylinder>(position, rotation, scale));
-            break;
-        case 3: // Capsule
-            m_gameObjects.push_back(std::make_shared<Capsule>(position, rotation, scale));
-            break;
-        }
-
-        m_objectRotationDeltas.push_back(rotationDelta);
-    }
-
     m_gameObjects.push_back(std::make_shared<Cube>(
-        Vector3(0.0f, 2.0f, 0.0f),
+        Vector3(0.0f, 5.0f, 0.0f),                // on top of first cube (3 units tall)
         Vector3(0.0f, 0.0f, 0.0f),
         Vector3(3.0f, 3.0f, 3.0f)
     ));
-    m_objectRotationDeltas.push_back(Vector3(0.0f, 1.0f, 0.0f));
+    m_objectRotationDeltas.push_back(Vector3(0.0f, 0.0f, 0.0f));
 
-    m_gameObjects.push_back(std::make_shared<Sphere>(
-        Vector3(-35.0f, 3.0f, -35.0f),
-        Vector3(0.0f, 0.0f, 0.0f),
-        Vector3(4.0f, 4.0f, 4.0f)
+    m_gameObjects.push_back(std::make_shared<Cube>(
+        Vector3(0.0f, 2.0f, 0.0f),                // on top of first cube (3 units tall)
+        Vector3(0.0f, 90.0f, 0.0f),
+        Vector3(3.0f, 3.0f, 3.0f)
     ));
-    m_objectRotationDeltas.push_back(Vector3(0.2f, 0.3f, 0.1f));
+    m_objectRotationDeltas.push_back(Vector3(0.0f, 0.0f, 0.0f));
 
-    m_gameObjects.push_back(std::make_shared<Sphere>(
-        Vector3(35.0f, 3.0f, -35.0f),
-        Vector3(0.0f, 0.0f, 0.0f),
-        Vector3(4.0f, 4.0f, 4.0f)
-    ));
-    m_objectRotationDeltas.push_back(Vector3(-0.2f, 0.3f, -0.1f));
-
-    m_gameObjects.push_back(std::make_shared<Sphere>(
-        Vector3(-35.0f, 3.0f, 35.0f),
-        Vector3(0.0f, 0.0f, 0.0f),
-        Vector3(4.0f, 4.0f, 4.0f)
-    ));
-    m_objectRotationDeltas.push_back(Vector3(0.1f, -0.3f, 0.2f));
-
-    m_gameObjects.push_back(std::make_shared<Sphere>(
-        Vector3(35.0f, 3.0f, 35.0f),
-        Vector3(0.0f, 0.0f, 0.0f),
-        Vector3(4.0f, 4.0f, 4.0f)
-    ));
-    m_objectRotationDeltas.push_back(Vector3(-0.1f, -0.3f, -0.2f));
-
-    // Create rows of cylinders to show fog gradient
-    for (int row = 0; row < 5; ++row)
-    {
-        float zPos = -20.0f + (row * 10.0f); // Every 10 units
-        for (int col = 0; col < 5; ++col)
-        {
-            float xPos = -20.0f + (col * 10.0f);
-
-            m_gameObjects.push_back(std::make_shared<Cylinder>(
-                Vector3(xPos, 2.5f, zPos),
-                Vector3(0.0f, 0.0f, 0.0f),
-                Vector3(1.5f, 2.5f, 1.5f)
-            ));
-            m_objectRotationDeltas.push_back(Vector3(0.0f, 0.5f, 0.0f));
-        }
-    }
 
     DX3DLogInfo("Created scene with %zu objects", m_gameObjects.size());
 
@@ -273,13 +187,14 @@ void dx3d::Game::createRenderingResources()
     snowConfig.lifetime = m_snowConfig.lifetime;
     snowConfig.lifetimeVariance = m_snowConfig.lifetimeVariance;
     snowConfig.emissionRate = m_snowConfig.emissionRate;
-    snowConfig.maxParticles = 2000;
+    snowConfig.maxParticles = 0;
 
     auto snowEmitter = ParticleSystem::getInstance().createEmitter(
         "snow",
         snowConfig,
         createSnowParticle
     );
+
 
     // Initialize ImGui
     IMGUI_CHECKVERSION();
@@ -343,65 +258,32 @@ void dx3d::Game::update()
     ImGui::NewFrame();
     //ImGui::ShowDemoWindow();
 
-    ImGui::Begin("Settings");
-    ImGui::Checkbox("Enable Fog", &m_fogDesc.enabled);
-    ImGui::SliderFloat("Fog Start", &m_fogDesc.start, 0.1f, 50.0f);
-    ImGui::SliderFloat("Fog End", &m_fogDesc.end, 1.0f, 100.0f);
+    ImGui::Begin("Credits");
+    
+    ImGui::Text("Scene Editor v0.1.2");
 
-    if (m_fogDesc.end < m_fogDesc.start) m_fogDesc.end = m_fogDesc.start;
-    if (m_fogDesc.start > m_fogDesc.end) m_fogDesc.start = m_fogDesc.end;
+    ImGui::Separator();
 
-    ImGui::ColorEdit3("Fog Color", &m_fogDesc.color.x);
+    ImGui::Text("Developed by: Sydrenz Cao");
+    ImGui::Text("Game Logic by: Sydrenz Cao");
+    ImGui::Text("Art Direction by: Sydrenz Cao");
+    ImGui::Text("Painstakingly Debugged by: Sydrenz 'Why isn't this working' Cao");
+    ImGui::Text("Music Licensing Team: no one lmao");
+    ImGui::Text("Memory Leaks Supervised by: Definitely not me");
+    ImGui::Text("Emotional Support provided by: iced tea and the foam of my bed");
 
-    if (ImGui::CollapsingHeader("Snow Particles"))
-    {
-        bool configChanged = false;
+    ImGui::Separator();
 
-        // Enable/disable snow
-        configChanged |= ImGui::Checkbox("Enable Snow", &m_snowConfig.active);
+    ImGui::Text("Special Thanks To:");
+    ImGui::BulletText("Me, for being brave enough to open the project again");
+    ImGui::BulletText("Future Me, who will look at this code with regret");
+    ImGui::BulletText("Past Me, for writing zero comments");
+    ImGui::BulletText("Stack Overflow, but I still did all the typing");
+    ImGui::BulletText("My computer, which somehow did not crash");
 
-        // Emission properties
-        ImGui::Separator();
-        ImGui::Text("Emission");
-        configChanged |= ImGui::SliderFloat("Emission Rate", &m_snowConfig.emissionRate, 0.0f, 200.0f);
-        configChanged |= ImGui::SliderFloat("Lifetime", &m_snowConfig.lifetime, 1.0f, 20.0f);
-        configChanged |= ImGui::SliderFloat("Lifetime Variance", &m_snowConfig.lifetimeVariance, 0.0f, 5.0f);
+    ImGui::Separator();
 
-        // Position and movement
-        ImGui::Separator();
-        ImGui::Text("Movement");
-        configChanged |= ImGui::SliderFloat3("Velocity", &m_snowConfig.velocity.x, -10.0f, 10.0f);
-        configChanged |= ImGui::SliderFloat3("Velocity Variance", &m_snowConfig.velocityVariance.x, 0.0f, 5.0f);
-        configChanged |= ImGui::SliderFloat3("Acceleration", &m_snowConfig.acceleration.x, -5.0f, 5.0f);
-
-        // Spawn area
-        ImGui::Separator();
-        ImGui::Text("Spawn Area");
-        configChanged |= ImGui::SliderFloat("Spawn Height", &m_snowConfig.position.y, 5.0f, 50.0f);
-        configChanged |= ImGui::SliderFloat("Spawn Width", &m_snowConfig.positionVariance.x, 5.0f, 100.0f);
-        configChanged |= ImGui::SliderFloat("Spawn Depth", &m_snowConfig.positionVariance.z, 5.0f, 100.0f);
-
-        // Appearance
-        ImGui::Separator();
-        ImGui::Text("Appearance");
-        configChanged |= ImGui::SliderFloat("Start Size", &m_snowConfig.startSize, 0.05f, 2.0f);
-        configChanged |= ImGui::SliderFloat("End Size", &m_snowConfig.endSize, 0.05f, 2.0f);
-        configChanged |= ImGui::ColorEdit4("Start Color", &m_snowConfig.startColor.x);
-        configChanged |= ImGui::ColorEdit4("End Color", &m_snowConfig.endColor.x);
-
-        // Reset button
-        ImGui::Separator();
-        if (ImGui::Button("Reset to Defaults"))
-        {
-            m_snowConfig = SnowConfig{}; // Reset to default values
-            configChanged = true;
-        }
-
-        // Apply changes to emitter
-        if (configChanged)
-        {
-            updateSnowEmitter();
-        }
+    if (ImGui::Button("Okay, bye")) {
     }
 
     ImGui::End();

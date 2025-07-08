@@ -30,6 +30,10 @@
 #include <cstdio>
 #include <DirectXMath.h>
 
+#define _CRT_SECURE_NO_WARNINGS
+#define STB_IMAGE_IMPLEMENTATION
+#include "External/stb_image.h"
+
 dx3d::Game::Game(const GameDesc& desc) :
     Base({ *std::make_unique<Logger>(desc.logLevel).release() }),
     m_loggerPtr(&m_logger)
@@ -147,7 +151,7 @@ void dx3d::Game::createRenderingResources()
 
     m_gameObjects.push_back(std::make_shared<Cube>(
         Vector3(0.0f, 2.0f, 0.0f),                // on top of first cube (3 units tall)
-        Vector3(0.0f, 90.0f, 0.0f),
+        Vector3(0.0f, 180.0f, 0.0f),
         Vector3(3.0f, 3.0f, 3.0f)
     ));
     m_objectRotationDeltas.push_back(Vector3(0.0f, 0.0f, 0.0f));
@@ -253,6 +257,12 @@ void dx3d::Game::update()
     m_deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(currentTime - m_previousTime).count() / 1000000.0f;
     m_previousTime = currentTime;
 
+    int my_image_width = 256;
+    int my_image_height = 256;
+    ID3D11ShaderResourceView* my_texture = NULL;
+    bool ret = LoadTextureFromFile("../../dlsu stuff.png", &my_texture, &my_image_width, &my_image_height);
+    IM_ASSERT(ret);
+
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
@@ -262,6 +272,7 @@ void dx3d::Game::update()
     
     ImGui::Text("Scene Editor v0.1.2");
 
+    ImGui::Image((ImTextureID)(intptr_t)my_texture, ImVec2(my_image_width, my_image_height));
     ImGui::Separator();
 
     ImGui::Text("Developed by: Sydrenz Cao");
@@ -306,6 +317,71 @@ void dx3d::Game::update()
         emitterPos.y += 10.0f; 
         snowEmitter->setPosition(emitterPos);
     }
+}
+
+static bool LoadTextureFromMemory(const void* data, size_t data_size, ID3D11ShaderResourceView** out_srv, int* out_width, int* out_height)
+{
+    // Load from disk into a raw RGBA buffer
+    int image_width = 0;
+    int image_height = 0;
+    unsigned char* image_data = stbi_load_from_memory((const unsigned char*)data, (int)data_size, &image_width, &image_height, NULL, 4);
+    if (image_data == NULL)
+        return false;
+
+    // Create texture
+    D3D11_TEXTURE2D_DESC desc;
+    ZeroMemory(&desc, sizeof(desc));
+    desc.Width = image_width;
+    desc.Height = image_height;
+    desc.MipLevels = 1;
+    desc.ArraySize = 1;
+    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    desc.SampleDesc.Count = 1;
+    desc.Usage = D3D11_USAGE_DEFAULT;
+    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    desc.CPUAccessFlags = 0;
+
+    ID3D11Texture2D* pTexture = NULL;
+    D3D11_SUBRESOURCE_DATA subResource;
+    subResource.pSysMem = image_data;
+    subResource.SysMemPitch = desc.Width * 4;
+    subResource.SysMemSlicePitch = 0;
+    g_pd3dDevice->CreateTexture2D(&desc, &subResource, &pTexture);
+
+    // Create texture view
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+    ZeroMemory(&srvDesc, sizeof(srvDesc));
+    srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels = desc.MipLevels;
+    srvDesc.Texture2D.MostDetailedMip = 0;
+    g_pd3dDevice->CreateShaderResourceView(pTexture, &srvDesc, out_srv);
+    pTexture->Release();
+
+    *out_width = image_width;
+    *out_height = image_height;
+    stbi_image_free(image_data);
+
+    return true;
+}
+
+// Open and read a file, then forward to LoadTextureFromMemory()
+static bool LoadTextureFromFile(const char* file_name, ID3D11ShaderResourceView** out_srv, int* out_width, int* out_height)
+{
+    FILE* f = fopen(file_name, "rb");
+    if (f == NULL)
+        return false;
+    fseek(f, 0, SEEK_END);
+    size_t file_size = (size_t)ftell(f);
+    if (file_size == -1)
+        return false;
+    fseek(f, 0, SEEK_SET);
+    void* file_data = IM_ALLOC(file_size);
+    fread(file_data, 1, file_size, f);
+    fclose(f);
+    bool ret = LoadTextureFromMemory(file_data, file_size, out_srv, out_width, out_height);
+    IM_FREE(file_data);
+    return ret;
 }
 
 void dx3d::Game::updateSnowEmitter()

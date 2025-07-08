@@ -309,15 +309,14 @@ void dx3d::Game::createRenderingResources()
     ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX11_Init(device, d3dContext);
 
-    // Create the definitive blend state for UI and sprite alpha blending.
-    // This correctly handles PNGs with premultiplied alpha.
+    //Blend state for UI and sprite alpha blending (for PNGs with premultiplied alpha)
     D3D11_BLEND_DESC blendDesc = {};
     blendDesc.RenderTarget[0].BlendEnable = TRUE;
     blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
     blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
     blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-    blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE; // Use the source alpha
-    blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA; // Use the inverse of the source alpha
+    blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+    blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
     blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
     blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
@@ -375,7 +374,7 @@ void dx3d::Game::processInput(float deltaTime)
         m_selectionSystem->setSelectedObject(picked);
     }
 
-    if (input.isKeyPressed(KeyCode::W))
+    if (input.isKeyPressed(KeyCode::W) && !input.isMouseButtonPressed(MouseButton::Right))
     {
         Vector3 rotationDelta(m_cubeRotationSpeed * deltaTime, m_cubeRotationSpeed * deltaTime, m_cubeRotationSpeed * deltaTime);
         for (size_t i = 0; i < m_gameObjects.size() - 2; ++i)
@@ -387,7 +386,7 @@ void dx3d::Game::processInput(float deltaTime)
         }
     }
 
-    if (input.isKeyPressed(KeyCode::S))
+    if (input.isKeyPressed(KeyCode::S) && !input.isMouseButtonPressed(MouseButton::Right))
     {
         Vector3 rotationDelta(-m_cubeRotationSpeed * deltaTime, -m_cubeRotationSpeed * deltaTime, -m_cubeRotationSpeed * deltaTime);
         for (size_t i = 0; i < m_gameObjects.size() - 2; ++i)
@@ -582,7 +581,7 @@ void dx3d::Game::renderScene(Camera& camera, const Matrix4x4& projMatrix, Render
                 deviceContext.setVertexBuffer(*m_cameraGizmoVertexBuffer);
                 deviceContext.setIndexBuffer(*m_cameraGizmoIndexBuffer);
 
-                // Set gizmo transformations
+                //set gizmo transformations
                 TransformationMatrices transformMatrices;
                 Matrix4x4 world = Matrix4x4::CreateRotationX(gameObject->getRotation().x) *
                     Matrix4x4::CreateRotationY(gameObject->getRotation().y) *
@@ -599,16 +598,16 @@ void dx3d::Game::renderScene(Camera& camera, const Matrix4x4& projMatrix, Render
 
             
             {// --- 2. Render the 2D Camera Icon ---
-                // Store original states
+                //store original states
                 ID3D11RasterizerState* originalRasterizerState = nullptr;
                 d3dContext->RSGetState(&originalRasterizerState);
 
-                // Apply states for transparency
+                //spply states for transparency
                 d3dContext->OMSetBlendState(m_alphaBlendState, nullptr, 0xffffffff);
                 d3dContext->RSSetState(m_noCullRasterizerState);
                 d3dContext->OMSetDepthStencilState(m_particleDepthState, 0);
 
-                // Set shaders and resources
+                //shaders and resources
                 deviceContext.setVertexShader(m_textureVertexShader->getShader());
                 deviceContext.setPixelShader(m_texturePixelShader->getShader());
                 deviceContext.setInputLayout(m_textureVertexShader->getInputLayout());
@@ -617,7 +616,7 @@ void dx3d::Game::renderScene(Camera& camera, const Matrix4x4& projMatrix, Render
                 d3dContext->PSSetShaderResources(0, 1, &m_cameraIconTexture);
                 d3dContext->PSSetSamplers(0, 1, &m_samplerState);
 
-                // Set transformations for the icon w/ billboarding effect
+                //set transformations for the icon w/ billboarding effect
                 TransformationMatrices transformMatrices;
                 Vector3 iconPos = gameObject->getPosition();
                 Vector3 camToIconDir = iconPos - camera.getPosition();
@@ -630,10 +629,9 @@ void dx3d::Game::renderScene(Camera& camera, const Matrix4x4& projMatrix, Render
                 transformMatrices.projection = Matrix4x4::fromXMMatrix(DirectX::XMMatrixTranspose(projMatrix.toXMMatrix()));
                 m_transformConstantBuffer->update(deviceContext, &transformMatrices);
 
-                // Draw the icon
                 deviceContext.drawIndexed(CameraIcon::GetIndexCount(), 0, 0);
 
-                // Restore original states
+                //restore original states
                 d3dContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
                 d3dContext->RSSetState(originalRasterizerState);
                 d3dContext->OMSetDepthStencilState(m_solidDepthState, 0);

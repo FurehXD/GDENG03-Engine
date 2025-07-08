@@ -328,6 +328,17 @@ void dx3d::Game::update()
         }
     }
 
+    if (ImGui::CollapsingHeader("About", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        if (ImGui::Button("Show Credits"))
+        {
+            m_showCreditsScreen = true;
+        }
+
+        ImGui::SameLine();
+        ImGui::Text("View project credits and information");
+    }
+
     ImGui::End();
 
     // Cube Controls Window
@@ -410,6 +421,68 @@ void dx3d::Game::update()
         emitterPos.y += 10.0f;
         snowEmitter->setPosition(emitterPos);
     }
+
+    renderCreditsScreen();
+}
+
+void dx3d::Game::renderCreditsScreen()
+{
+    if (!m_showCreditsScreen)
+        return;
+
+    // Center the credits window on screen
+    ImGuiIO& io = ImGui::GetIO();
+    ImVec2 center = ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f);
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(400, 300), ImGuiCond_Appearing);
+
+    // Create the credits window
+    if (ImGui::Begin("Credits", &m_showCreditsScreen,
+        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse))
+    {
+        // Center the content
+        float windowWidth = ImGui::GetWindowSize().x;
+
+        // Title
+        ImGui::PushFont(ImGui::GetIO().FontDefault); // You can use a larger font if available
+
+        // Developer credit
+        const char* developerText = "Developer: Rylan Kenshi Lim";
+        float developerTextWidth = ImGui::CalcTextSize(developerText).x;
+        ImGui::SetCursorPosX((windowWidth - developerTextWidth) * 0.5f);
+        ImGui::Text("%s", developerText);
+
+        ImGui::Spacing();
+        ImGui::Spacing();
+
+        const char* courseText = "IET-GD";
+        float courseTextWidth = ImGui::CalcTextSize(courseText).x;
+        ImGui::SetCursorPosX((windowWidth - courseTextWidth) * 0.5f);
+        ImGui::Text("%s", courseText);
+
+        ImGui::Spacing();
+
+        const char* numberText = "118";
+        float numberTextWidth = ImGui::CalcTextSize(numberText).x;
+        ImGui::SetCursorPosX((windowWidth - numberTextWidth) * 0.5f);
+        ImGui::Text("%s", numberText);
+
+        ImGui::PopFont();
+
+        ImGui::Spacing();
+
+        // Position close button at the bottom center
+        ImGui::SetCursorPosY(ImGui::GetWindowSize().y - 60);
+
+        float buttonWidth = 100.0f;
+        ImGui::SetCursorPosX((windowWidth - buttonWidth) * 0.5f);
+
+        if (ImGui::Button("Close", ImVec2(buttonWidth, 30)))
+        {
+            m_showCreditsScreen = false;
+        }
+    }
+    ImGui::End();
 }
 
 void dx3d::Game::updateSnowEmitter()

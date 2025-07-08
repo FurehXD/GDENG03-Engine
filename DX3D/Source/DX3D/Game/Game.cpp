@@ -374,7 +374,7 @@ void dx3d::Game::processInput(float deltaTime)
         m_selectionSystem->setSelectedObject(picked);
     }
 
-    if (input.isKeyPressed(KeyCode::W) && !input.isMouseButtonPressed(MouseButton::Right))
+    if (input.isKeyPressed(KeyCode::W))
     {
         Vector3 rotationDelta(m_cubeRotationSpeed * deltaTime, m_cubeRotationSpeed * deltaTime, m_cubeRotationSpeed * deltaTime);
         for (size_t i = 0; i < m_gameObjects.size() - 2; ++i)
@@ -386,7 +386,7 @@ void dx3d::Game::processInput(float deltaTime)
         }
     }
 
-    if (input.isKeyPressed(KeyCode::S) && !input.isMouseButtonPressed(MouseButton::Right))
+    if (input.isKeyPressed(KeyCode::S))
     {
         Vector3 rotationDelta(-m_cubeRotationSpeed * deltaTime, -m_cubeRotationSpeed * deltaTime, -m_cubeRotationSpeed * deltaTime);
         for (size_t i = 0; i < m_gameObjects.size() - 2; ++i)

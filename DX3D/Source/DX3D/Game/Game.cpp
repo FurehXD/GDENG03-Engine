@@ -29,6 +29,10 @@
 #include <string>
 #include <cstdio>
 #include <DirectXMath.h>
+#include <algorithm>
+
+#include <wincodec.h>
+#pragma comment(lib, "windowscodecs.lib")
 
 dx3d::Game::Game(const GameDesc& desc) :
     Base({ *std::make_unique<Logger>(desc.logLevel).release() }),
@@ -40,6 +44,7 @@ dx3d::Game::Game(const GameDesc& desc) :
     m_previousTime = std::chrono::steady_clock::now();
 
     createRenderingResources();
+    createImageTextures();
 
     DX3DLogInfo("Game initialized with Camera, Input system, and Particle system.");
 }
@@ -54,6 +59,176 @@ dx3d::Game::~Game()
     // Release depth states
     if (m_particleDepthState) m_particleDepthState->Release();
     if (m_solidDepthState) m_solidDepthState->Release();
+}
+
+bool dx3d::Game::loadImageTexture(const char* filename, ImageTexture& imageTexture)
+{
+    // Convert char* to wchar_t*
+    wchar_t wfilename[512];
+    MultiByteToWideChar(CP_UTF8, 0, filename, -1, wfilename, 512);
+
+    // Initialize COM
+    CoInitialize(nullptr);
+
+    // Create WIC factory
+    Microsoft::WRL::ComPtr<IWICImagingFactory> wicFactory;
+    HRESULT hr = CoCreateInstance(
+        CLSID_WICImagingFactory,
+        nullptr,
+        CLSCTX_INPROC_SERVER,
+        IID_PPV_ARGS(&wicFactory)
+    );
+
+    if (FAILED(hr))
+    {
+        DX3DLogError("Failed to create WIC factory");
+        return false;
+    }
+
+    // Create decoder
+    Microsoft::WRL::ComPtr<IWICBitmapDecoder> decoder;
+    hr = wicFactory->CreateDecoderFromFilename(
+        wfilename,
+        nullptr,
+        GENERIC_READ,
+        WICDecodeMetadataCacheOnLoad,
+        &decoder
+    );
+
+    if (FAILED(hr))
+    {
+        DX3DLogError("Failed to create decoder from filename");
+        return false;
+    }
+
+    // Get first frame
+    Microsoft::WRL::ComPtr<IWICBitmapFrameDecode> frame;
+    hr = decoder->GetFrame(0, &frame);
+    if (FAILED(hr))
+    {
+        DX3DLogError("Failed to get frame");
+        return false;
+    }
+
+    // Convert to 32-bit RGBA
+    Microsoft::WRL::ComPtr<IWICFormatConverter> converter;
+    hr = wicFactory->CreateFormatConverter(&converter);
+    if (FAILED(hr))
+    {
+        DX3DLogError("Failed to create format converter");
+        return false;
+    }
+
+    hr = converter->Initialize(
+        frame.Get(),
+        GUID_WICPixelFormat32bppRGBA,
+        WICBitmapDitherTypeNone,
+        nullptr,
+        0.0,
+        WICBitmapPaletteTypeCustom
+    );
+
+    if (FAILED(hr))
+    {
+        DX3DLogError("Failed to initialize converter");
+        return false;
+    }
+
+    // Get image dimensions
+    UINT width, height;
+    hr = converter->GetSize(&width, &height);
+    if (FAILED(hr))
+    {
+        DX3DLogError("Failed to get image size");
+        return false;
+    }
+
+    // Calculate stride and image size
+    UINT stride = width * 4; // 4 bytes per pixel (RGBA)
+    UINT imageSize = stride * height;
+
+    // Allocate buffer for pixel data
+    std::vector<BYTE> pixelData(imageSize);
+
+    // Copy pixel data
+    hr = converter->CopyPixels(
+        nullptr,
+        stride,
+        imageSize,
+        pixelData.data()
+    );
+
+    if (FAILED(hr))
+    {
+        DX3DLogError("Failed to copy pixels");
+        return false;
+    }
+
+    // Create D3D11 texture
+    auto& renderSystem = m_graphicsEngine->getRenderSystem();
+    auto& deviceContext = renderSystem.getDeviceContext();
+    auto d3dContext = deviceContext.getDeviceContext();
+    ID3D11Device* device = nullptr;
+    d3dContext->GetDevice(&device);
+
+    D3D11_TEXTURE2D_DESC textureDesc = {};
+    textureDesc.Width = width;
+    textureDesc.Height = height;
+    textureDesc.MipLevels = 1;
+    textureDesc.ArraySize = 1;
+    textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    textureDesc.SampleDesc.Count = 1;
+    textureDesc.Usage = D3D11_USAGE_DEFAULT;
+    textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+    D3D11_SUBRESOURCE_DATA initData = {};
+    initData.pSysMem = pixelData.data();
+    initData.SysMemPitch = stride;
+
+    hr = device->CreateTexture2D(&textureDesc, &initData, &imageTexture.texture);
+    if (FAILED(hr))
+    {
+        DX3DLogError("Failed to create texture");
+        device->Release();
+        return false;
+    }
+
+    // Create shader resource view
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Format = textureDesc.Format;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels = 1;
+
+    hr = device->CreateShaderResourceView(
+        imageTexture.texture.Get(),
+        &srvDesc,
+        &imageTexture.srv
+    );
+
+    device->Release();
+
+    if (FAILED(hr))
+    {
+        DX3DLogError("Failed to create shader resource view");
+        return false;
+    }
+
+    // Store image size
+    imageTexture.size = ImVec2(static_cast<float>(width), static_cast<float>(height));
+    imageTexture.loaded = true;
+
+    DX3DLogInfo("Successfully loaded image texture");
+    return true;
+}
+
+void dx3d::Game::createImageTextures()
+{
+    // Try to load DLSU logo
+    // Place a DLSU logo image file named "dlsu_logo.png" in your project directory
+    if (!loadImageTexture("dlsu_logo.png", m_dlsuLogo))
+    {
+        DX3DLogWarning("Could not load DLSU logo image. Place 'dlsu_logo.png' in project directory.");
+    }
 }
 
 void dx3d::Game::createRenderingResources()
@@ -271,138 +446,142 @@ void dx3d::Game::update()
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 
-    ImGui::Begin("Settings");
-    ImGui::Checkbox("Enable Fog", &m_fogDesc.enabled);
-    ImGui::SliderFloat("Fog Start", &m_fogDesc.start, 0.1f, 50.0f);
-    ImGui::SliderFloat("Fog End", &m_fogDesc.end, 1.0f, 100.0f);
-    ImGui::ColorEdit3("Fog Color", &m_fogDesc.color.x);
+    // ===== RENDER MENU BAR FIRST =====
+    renderMainMenuBar();
 
-    if (ImGui::CollapsingHeader("Snow Particles"))
+    // ===== SETTINGS WINDOW (HIDDEN BY DEFAULT, SHOWN VIA MENU) =====
+    if (m_showSettingsWindow)
     {
-        bool configChanged = false;
+        ImGui::Begin("Settings", &m_showSettingsWindow);  // Close button will hide it
 
-        // Enable/disable snow
-        configChanged |= ImGui::Checkbox("Enable Snow", &m_snowConfig.active);
+        ImGui::Checkbox("Enable Fog", &m_fogDesc.enabled);
+        ImGui::SliderFloat("Fog Start", &m_fogDesc.start, 0.1f, 50.0f);
+        ImGui::SliderFloat("Fog End", &m_fogDesc.end, 1.0f, 100.0f);
+        ImGui::ColorEdit3("Fog Color", &m_fogDesc.color.x);
 
-        // Emission properties
-        ImGui::Separator();
-        ImGui::Text("Emission");
-        configChanged |= ImGui::SliderFloat("Emission Rate", &m_snowConfig.emissionRate, 0.0f, 200.0f);
-        configChanged |= ImGui::SliderFloat("Lifetime", &m_snowConfig.lifetime, 1.0f, 20.0f);
-        configChanged |= ImGui::SliderFloat("Lifetime Variance", &m_snowConfig.lifetimeVariance, 0.0f, 5.0f);
-
-        // Position and movement
-        ImGui::Separator();
-        ImGui::Text("Movement");
-        configChanged |= ImGui::SliderFloat3("Velocity", &m_snowConfig.velocity.x, -10.0f, 10.0f);
-        configChanged |= ImGui::SliderFloat3("Velocity Variance", &m_snowConfig.velocityVariance.x, 0.0f, 5.0f);
-        configChanged |= ImGui::SliderFloat3("Acceleration", &m_snowConfig.acceleration.x, -5.0f, 5.0f);
-
-        // Spawn area
-        ImGui::Separator();
-        ImGui::Text("Spawn Area");
-        configChanged |= ImGui::SliderFloat("Spawn Height", &m_snowConfig.position.y, 5.0f, 50.0f);
-        configChanged |= ImGui::SliderFloat("Spawn Width", &m_snowConfig.positionVariance.x, 5.0f, 100.0f);
-        configChanged |= ImGui::SliderFloat("Spawn Depth", &m_snowConfig.positionVariance.z, 5.0f, 100.0f);
-
-        // Appearance
-        ImGui::Separator();
-        ImGui::Text("Appearance");
-        configChanged |= ImGui::SliderFloat("Start Size", &m_snowConfig.startSize, 0.05f, 2.0f);
-        configChanged |= ImGui::SliderFloat("End Size", &m_snowConfig.endSize, 0.05f, 2.0f);
-        configChanged |= ImGui::ColorEdit4("Start Color", &m_snowConfig.startColor.x);
-        configChanged |= ImGui::ColorEdit4("End Color", &m_snowConfig.endColor.x);
-
-        // Reset button
-        ImGui::Separator();
-        if (ImGui::Button("Reset to Defaults"))
+        if (ImGui::CollapsingHeader("Snow Particles"))
         {
-            m_snowConfig = SnowConfig{}; // Reset to default values
-            configChanged = true;
+            bool configChanged = false;
+
+            // Enable/disable snow
+            configChanged |= ImGui::Checkbox("Enable Snow", &m_snowConfig.active);
+
+            // Emission properties
+            ImGui::Separator();
+            ImGui::Text("Emission");
+            configChanged |= ImGui::SliderFloat("Emission Rate", &m_snowConfig.emissionRate, 0.0f, 200.0f);
+            configChanged |= ImGui::SliderFloat("Lifetime", &m_snowConfig.lifetime, 1.0f, 20.0f);
+            configChanged |= ImGui::SliderFloat("Lifetime Variance", &m_snowConfig.lifetimeVariance, 0.0f, 5.0f);
+
+            // Position and movement
+            ImGui::Separator();
+            ImGui::Text("Movement");
+            configChanged |= ImGui::SliderFloat3("Velocity", &m_snowConfig.velocity.x, -10.0f, 10.0f);
+            configChanged |= ImGui::SliderFloat3("Velocity Variance", &m_snowConfig.velocityVariance.x, 0.0f, 5.0f);
+            configChanged |= ImGui::SliderFloat3("Acceleration", &m_snowConfig.acceleration.x, -5.0f, 5.0f);
+
+            // Spawn area
+            ImGui::Separator();
+            ImGui::Text("Spawn Area");
+            configChanged |= ImGui::SliderFloat("Spawn Height", &m_snowConfig.position.y, 5.0f, 50.0f);
+            configChanged |= ImGui::SliderFloat("Spawn Width", &m_snowConfig.positionVariance.x, 5.0f, 100.0f);
+            configChanged |= ImGui::SliderFloat("Spawn Depth", &m_snowConfig.positionVariance.z, 5.0f, 100.0f);
+
+            // Appearance
+            ImGui::Separator();
+            ImGui::Text("Appearance");
+            configChanged |= ImGui::SliderFloat("Start Size", &m_snowConfig.startSize, 0.05f, 2.0f);
+            configChanged |= ImGui::SliderFloat("End Size", &m_snowConfig.endSize, 0.05f, 2.0f);
+            configChanged |= ImGui::ColorEdit4("Start Color", &m_snowConfig.startColor.x);
+            configChanged |= ImGui::ColorEdit4("End Color", &m_snowConfig.endColor.x);
+
+            // Reset button
+            ImGui::Separator();
+            if (ImGui::Button("Reset to Defaults"))
+            {
+                m_snowConfig = SnowConfig{}; // Reset to default values
+                configChanged = true;
+            }
+
+            // Apply changes to emitter
+            if (configChanged)
+            {
+                updateSnowEmitter();
+            }
         }
 
-        // Apply changes to emitter
-        if (configChanged)
-        {
-            updateSnowEmitter();
-        }
+        // REMOVE THE OLD "ABOUT" SECTION - It's now in the menu bar!
+
+        ImGui::End();
     }
 
-    if (ImGui::CollapsingHeader("About", ImGuiTreeNodeFlags_DefaultOpen))
+    // ===== CUBE CONTROLS WINDOW (HIDDEN BY DEFAULT, SHOWN VIA MENU) =====
+    if (m_showCubeControlsWindow)
     {
-        if (ImGui::Button("Show Credits"))
-        {
-            m_showCreditsScreen = true;
+        ImGui::Begin("Cube Controls", &m_showCubeControlsWindow);  // Close button will hide it
+
+        ImGui::Text("🎮 Camera & Cube Controls:");
+        ImGui::Separator();
+
+        auto& input = Input::getInstance();
+
+        // Camera status
+        if (input.isMouseButtonPressed(MouseButton::Right)) {
+            ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "📷 CAMERA MODE: ACTIVE");
+            ImGui::Text("Right mouse + WASD/QE moves camera");
+        }
+        else {
+            ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "📷 Camera Mode: Inactive");
+            ImGui::Text("Hold right mouse + WASD/QE to move camera");
         }
 
-        ImGui::SameLine();
-        ImGui::Text("View project credits and information");
+        ImGui::Separator();
+
+        // Cube controls (only W/S)
+        ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "🎲 CUBE ROTATION: W/S ONLY");
+        ImGui::Text("W: Rotate cubes forward (pitch+)");
+        ImGui::Text("S: Rotate cubes backward (pitch-)");
+        ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "A/D: Camera strafe only (no cube rotation)");
+        ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "✨ Cubes are STATIC unless W/S pressed!");
+
+        // Show which rotation keys are currently pressed
+        ImGui::Separator();
+        ImGui::Text("Cube Rotation Status:");
+        bool anyRotationActive = false;
+        if (input.isKeyPressed(KeyCode::W)) {
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(1, 0, 0, 1), "W(Forward) ");
+            anyRotationActive = true;
+        }
+        if (input.isKeyPressed(KeyCode::S)) {
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(1, 0, 0, 1), "S(Backward) ");
+            anyRotationActive = true;
+        }
+
+        if (!anyRotationActive) {
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "STATIC (not rotating)");
+        }
+
+        ImGui::Separator();
+        ImGui::SliderFloat("Cube Rotation Speed", &m_cubeRotationSpeed, 0.5f, 10.0f);
+
+        if (ImGui::Button("Reset Camera (R)")) {
+            m_camera->setPosition(Vector3(12.0f, 8.0f, -12.0f));
+            m_camera->lookAt(Vector3(0.0f, 2.0f, 0.0f));
+            DX3DLogInfo("Camera reset via UI button");
+        }
+
+        ImGui::Separator();
+        ImGui::Text("Scene Info:");
+        ImGui::Text("Active Cubes: %d", static_cast<int>(m_gameObjects.size() - 1)); // -1 for the plane
+        ImGui::Text("FPS: %.1f (%.3f ms)", 1.0f / m_deltaTime, m_deltaTime * 1000.0f);
+
+        ImGui::End();
     }
 
-    ImGui::End();
-
-    // Cube Controls Window
-    ImGui::Begin("Cube Controls");
-    ImGui::Text("🎮 Camera & Cube Controls:");
-    ImGui::Separator();
-
-    auto& input = Input::getInstance();
-
-    // Camera status
-    if (input.isMouseButtonPressed(MouseButton::Right)) {
-        ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "📷 CAMERA MODE: ACTIVE");
-        ImGui::Text("Right mouse + WASD/QE moves camera");
-    }
-    else {
-        ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "📷 Camera Mode: Inactive");
-        ImGui::Text("Hold right mouse + WASD/QE to move camera");
-    }
-
-    ImGui::Separator();
-
-    // Cube controls (only W/S)
-    ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "🎲 CUBE ROTATION: W/S ONLY");
-    ImGui::Text("W: Rotate cubes forward (pitch+)");
-    ImGui::Text("S: Rotate cubes backward (pitch-)");
-    ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "A/D: Camera strafe only (no cube rotation)");
-    ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "✨ Cubes are STATIC unless W/S pressed!");
-
-    // Show which rotation keys are currently pressed
-    ImGui::Separator();
-    ImGui::Text("Cube Rotation Status:");
-    bool anyRotationActive = false;
-    if (input.isKeyPressed(KeyCode::W)) {
-        ImGui::SameLine();
-        ImGui::TextColored(ImVec4(1, 0, 0, 1), "W(Forward) ");
-        anyRotationActive = true;
-    }
-    if (input.isKeyPressed(KeyCode::S)) {
-        ImGui::SameLine();
-        ImGui::TextColored(ImVec4(1, 0, 0, 1), "S(Backward) ");
-        anyRotationActive = true;
-    }
-
-    if (!anyRotationActive) {
-        ImGui::SameLine();
-        ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "STATIC (not rotating)");
-    }
-
-    ImGui::Separator();
-    ImGui::SliderFloat("Cube Rotation Speed", &m_cubeRotationSpeed, 0.5f, 10.0f);
-
-    if (ImGui::Button("Reset Camera (R)")) {
-        m_camera->setPosition(Vector3(12.0f, 8.0f, -12.0f));
-        m_camera->lookAt(Vector3(0.0f, 2.0f, 0.0f));
-        DX3DLogInfo("Camera reset via UI button");
-    }
-
-    ImGui::Separator();
-    ImGui::Text("Scene Info:");
-    ImGui::Text("Active Cubes: %d", static_cast<int>(m_gameObjects.size() - 1)); // -1 for the plane
-    ImGui::Text("FPS: %.1f (%.3f ms)", 1.0f / m_deltaTime, m_deltaTime * 1000.0f);
-
-    ImGui::End();
-
+    // Process input and update objects
     processInput(m_deltaTime);
     m_camera->update();
 
@@ -422,7 +601,161 @@ void dx3d::Game::update()
         snowEmitter->setPosition(emitterPos);
     }
 
-    renderCreditsScreen();
+    // Render popup windows
+    renderCreditsScreen();  // This is the DLSU logo window (renamed from renderLogoWindow)
+    renderColorPickerWindow();
+}
+
+void dx3d::Game::renderColorPickerWindow()
+{
+    if (!m_showColorPicker)
+        return;
+
+    // Set window size and position (keep same size)
+    ImGuiIO& io = ImGui::GetIO();
+    ImVec2 center = ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f);
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_Appearing);
+
+    if (ImGui::Begin("Color Picker Screen", &m_showColorPicker,
+        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse))
+    {
+        float windowWidth = ImGui::GetWindowSize().x;
+
+        // Title
+        const char* titleText = "Color Picker Screen";
+        float titleWidth = ImGui::CalcTextSize(titleText).x;
+        ImGui::SetCursorPosX((windowWidth - titleWidth) * 0.5f);
+        ImGui::Text("%s", titleText);
+
+        ImGui::Spacing();
+
+        // Large color wheel positioned on the left
+        float wheelSize = 300.0f;
+        ImGui::SetCursorPosX(20); // Left side with small margin
+        ImGui::ColorPicker3("##ColorWheel", &m_selectedColor.x,
+            ImGuiColorEditFlags_PickerHueWheel |
+            ImGuiColorEditFlags_NoSidePreview |
+            ImGuiColorEditFlags_NoInputs |
+            ImGuiColorEditFlags_NoAlpha);
+
+        // Small color preview rectangle (positioned to the right)
+        float previewWidth = 60.0f;
+        float previewHeight = 30.0f;
+        ImGui::SetCursorPos(ImVec2(windowWidth - previewWidth - 20, 180)); // Right side, middle height
+        ImGui::ColorButton("##preview", m_selectedColor,
+            ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop,
+            ImVec2(previewWidth, previewHeight));
+
+    }
+    ImGui::End();
+}
+
+void dx3d::Game::renderMainMenuBar()
+{
+    if (ImGui::BeginMainMenuBar())
+    {
+        // ABOUT Menu
+        if (ImGui::BeginMenu("ABOUT"))
+        {
+            if (ImGui::MenuItem("Credits", nullptr, false, true))
+            {
+                m_showCreditsScreen = true;  // This opens the DLSU logo window
+            }
+
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("Exit Application", "ESC"))
+            {
+                m_isRunning = false;
+            }
+
+            ImGui::EndMenu();
+        }
+
+        // MISC Menu
+        if (ImGui::BeginMenu("MISC"))
+        {
+            if (ImGui::MenuItem("Color Picker", nullptr, false, true))
+            {
+                m_showColorPicker = true;
+            }
+
+            ImGui::Separator();
+
+            // Add some useful toggles
+            if (ImGui::MenuItem("Enable Fog", nullptr, &m_fogDesc.enabled))
+            {
+                // Fog toggle handled by the checkbox itself
+            }
+
+            if (ImGui::MenuItem("Enable Snow", nullptr, &m_snowConfig.active))
+            {
+                updateSnowEmitter();
+            }
+
+            ImGui::EndMenu();
+        }
+
+        // VIEW Menu
+        if (ImGui::BeginMenu("VIEW"))
+        {
+            if (ImGui::MenuItem("Settings Window", nullptr, &m_showSettingsWindow))
+            {
+                // Toggle settings window visibility
+            }
+
+            if (ImGui::MenuItem("Cube Controls", nullptr, &m_showCubeControlsWindow))
+            {
+                // Toggle cube controls window visibility
+            }
+
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("Reset Camera", "R"))
+            {
+                m_camera->setPosition(Vector3(12.0f, 8.0f, -12.0f));
+                m_camera->lookAt(Vector3(0.0f, 2.0f, 0.0f));
+                DX3DLogInfo("Camera reset to initial position");
+            }
+
+            ImGui::EndMenu();
+        }
+
+        // HELP Menu
+        if (ImGui::BeginMenu("HELP"))
+        {
+            ImGui::Text("Controls:");
+            ImGui::Separator();
+            ImGui::Text("Right Mouse + WASD/QE: Move Camera");
+            ImGui::Text("W/S: Rotate Cubes");
+            ImGui::Text("R: Reset Camera");
+            ImGui::Text("ESC: Exit Application");
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("About This Application"))
+            {
+                m_showCreditsScreen = true;  // Opens the credits (DLSU logo) window
+            }
+
+            ImGui::EndMenu();
+        }
+
+        // Right-aligned info
+        float windowWidth = ImGui::GetWindowSize().x;
+
+        // FPS Counter and Object Count
+        char statusText[64];
+        sprintf_s(statusText, "FPS: %.1f | Objects: %d",
+            1.0f / m_deltaTime,
+            static_cast<int>(m_gameObjects.size()));
+        float statusTextWidth = ImGui::CalcTextSize(statusText).x;
+
+        ImGui::SetCursorPosX(windowWidth - statusTextWidth - 10);
+        ImGui::Text("%s", statusText);
+
+        ImGui::EndMainMenuBar();
+    }
 }
 
 void dx3d::Game::renderCreditsScreen()
@@ -430,21 +763,58 @@ void dx3d::Game::renderCreditsScreen()
     if (!m_showCreditsScreen)
         return;
 
-    // Center the credits window on screen
     ImGuiIO& io = ImGui::GetIO();
     ImVec2 center = ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f);
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-    ImGui::SetNextWindowSize(ImVec2(400, 300), ImGuiCond_Appearing);
+    ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_Appearing); 
 
-    // Create the credits window
     if (ImGui::Begin("Credits", &m_showCreditsScreen,
         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse))
     {
-        // Center the content
         float windowWidth = ImGui::GetWindowSize().x;
 
-        // Title
-        ImGui::PushFont(ImGui::GetIO().FontDefault); // You can use a larger font if available
+        if (m_dlsuLogo.loaded)
+        {
+            float maxSize = 150.0f;
+            float scaleX = maxSize / m_dlsuLogo.size.x;
+            float scaleY = maxSize / m_dlsuLogo.size.y;
+            float logoScale = std::min(scaleX, scaleY);
+            logoScale = std::min(logoScale, 1.0f);
+
+            ImVec2 logoSize = ImVec2(m_dlsuLogo.size.x * logoScale, m_dlsuLogo.size.y * logoScale);
+
+            ImGui::SetCursorPosX((windowWidth - logoSize.x) * 0.5f);
+            ImGui::SetCursorPosY(30);
+            ImGui::Image((void*)m_dlsuLogo.srv.Get(), logoSize);
+        }
+
+        ImGui::SetCursorPosY(180);
+        ImGui::Spacing();
+
+        // University information
+        const char* universityText = "De La Salle University";
+        float universityTextWidth = ImGui::CalcTextSize(universityText).x;
+        ImGui::SetCursorPosX((windowWidth - universityTextWidth) * 0.5f);
+        ImGui::Text("%s", universityText);
+
+        ImGui::Spacing();
+
+        const char* locationText = "Manila, Philippines";
+        float locationTextWidth = ImGui::CalcTextSize(locationText).x;
+        ImGui::SetCursorPosX((windowWidth - locationTextWidth) * 0.5f);
+        ImGui::Text("%s", locationText);
+
+        ImGui::Spacing();
+        ImGui::Spacing();
+
+        // Course information
+        const char* courseText = "IET-GD 118";
+        float courseTextWidth = ImGui::CalcTextSize(courseText).x;
+        ImGui::SetCursorPosX((windowWidth - courseTextWidth) * 0.5f);
+        ImGui::Text("%s", courseText);
+
+        ImGui::Spacing();
+        ImGui::Spacing();
 
         // Developer credit
         const char* developerText = "Developer: Rylan Kenshi Lim";
@@ -454,33 +824,28 @@ void dx3d::Game::renderCreditsScreen()
 
         ImGui::Spacing();
         ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
 
-        const char* courseText = "IET-GD";
-        float courseTextWidth = ImGui::CalcTextSize(courseText).x;
-        ImGui::SetCursorPosX((windowWidth - courseTextWidth) * 0.5f);
-        ImGui::Text("%s", courseText);
+        // Acknowledgements section
+        const char* ackTitle = "Acknowledgements";
+        float ackTitleWidth = ImGui::CalcTextSize(ackTitle).x;
+        ImGui::SetCursorPosX((windowWidth - ackTitleWidth) * 0.5f);
+        ImGui::Text("%s", ackTitle);
 
         ImGui::Spacing();
 
-        const char* numberText = "118";
-        float numberTextWidth = ImGui::CalcTextSize(numberText).x;
-        ImGui::SetCursorPosX((windowWidth - numberTextWidth) * 0.5f);
-        ImGui::Text("%s", numberText);
-
-        ImGui::PopFont();
+        const char* pardcodeText = "Pardcode Game Engine Tutorial";
+        float pardcodeTextWidth = ImGui::CalcTextSize(pardcodeText).x;
+        ImGui::SetCursorPosX((windowWidth - pardcodeTextWidth) * 0.5f);
+        ImGui::Text("%s", pardcodeText);
 
         ImGui::Spacing();
 
-        // Position close button at the bottom center
-        ImGui::SetCursorPosY(ImGui::GetWindowSize().y - 60);
-
-        float buttonWidth = 100.0f;
-        ImGui::SetCursorPosX((windowWidth - buttonWidth) * 0.5f);
-
-        if (ImGui::Button("Close", ImVec2(buttonWidth, 30)))
-        {
-            m_showCreditsScreen = false;
-        }
+        const char* docNeilText = "Doc Neil's GDENG03 Course";
+        float docNeilTextWidth = ImGui::CalcTextSize(docNeilText).x;
+        ImGui::SetCursorPosX((windowWidth - docNeilTextWidth) * 0.5f);
+        ImGui::Text("%s", docNeilText);
     }
     ImGui::End();
 }

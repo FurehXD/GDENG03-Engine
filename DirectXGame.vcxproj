@@ -236,6 +236,9 @@
   <ItemGroup>
     <None Include="imgui\imgui.ini" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="Game\dlsu_logo.png" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -9,7 +9,7 @@
 #include "imgui.h"
 #include "imgui_impl_win32.h"
 #include "imgui_impl_dx11.h"
-
+#include <wrl.h>
 
 // Forward declarations
 namespace dx3d
@@ -55,6 +55,15 @@ namespace dx3d {
         float emissionRate = 50.0f;
         bool active = true;
     };
+
+    // Image texture wrapper for ImGui
+    struct ImageTexture
+    {
+        Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
+        Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv;
+        ImVec2 size;
+        bool loaded = false;
+    };
 }
 
 namespace dx3d
@@ -73,6 +82,12 @@ namespace dx3d
         void processInput(float deltaTime);
         void updateSnowEmitter();
         void renderCreditsScreen();
+        void renderColorPickerWindow();
+        void renderMainMenuBar();
+
+        // Image loading and management
+        bool loadImageTexture(const char* filename, ImageTexture& imageTexture);
+        void createImageTextures();
 
     private:
         std::unique_ptr<Logger> m_loggerPtr{};
@@ -80,6 +95,9 @@ namespace dx3d
         std::unique_ptr<Display> m_display{};
         bool m_isRunning{ true };
         bool m_showCreditsScreen{ false };
+        bool m_showColorPicker{ false };
+        bool m_showSettingsWindow{ false };      // Hidden by default
+        bool m_showCubeControlsWindow{ false };  // Hidden by default
 
         // Camera
         std::unique_ptr<Camera> m_camera{};
@@ -136,5 +154,11 @@ namespace dx3d
         // Animation variables
         std::chrono::steady_clock::time_point m_previousTime;
         float m_deltaTime{ 0.0f };
+
+        // Image textures for UI
+        ImageTexture m_dlsuLogo;
+
+        // Color picker state
+        ImVec4 m_selectedColor{ 1.0f, 1.0f, 1.0f, 1.0f };
     };
 }

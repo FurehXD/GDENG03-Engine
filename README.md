@@ -1,1 +1,10 @@
-Nothing to see here
+Rylan Lim
+Marco Laurel
+Sydrenz Cao
+Kevin Shu Too
+
+INSTRUCTIONS:
+
+Download or clone the repository
+Open in Visual Studio 2022
+Run in Debugger / Run program

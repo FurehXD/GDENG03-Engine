@@ -1,5 +1,5 @@
 Rylan Lim
-Marco Laurel
+Macario Laurel
 Sydrenz Cao
 Kevin Shu Too
 

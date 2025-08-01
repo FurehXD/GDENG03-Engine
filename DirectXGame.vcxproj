@@ -73,7 +73,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>Bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>Intermediate\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>E:\Visual Studio Projects\CPP-3D-Game-Tutorial-Series-master\GDENG03-Engine\DX3D\Include\DX3D\Assets;DX3D/Include;DX3D/Source;DX3D/Assets;DX3D/Physics;DX3D/ECS;$(IncludePath)</IncludePath>
+    <IncludePath>E:\Visual Studio Projects\CPP-3D-Game-Tutorial-Series-master\GDENG03-Engine\DX3D\Include\DX3D\Assets;DX3D/Include;DX3D/Source;DX3D/Assets;DX3D/Physics;DX3D/ECS;$(SolutionDir)DX3D\Include\DX3D\Assets;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -111,7 +111,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>E:\Visual Studio Projects\CPP-3D-Game-Tutorial-Series-master\GDENG03-Engine\reactphysics3d;E:\Visual Studio Projects\CPP-3D-Game-Tutorial-Series-master\GDENG03-Engine\reactphysics3d\include;E:\Visual Studio Projects\CPP-3D-Game-Tutorial-Series-master\GDENG03-Engine\Assets;$(SolutionDir)\IMGUI;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\Visual Studio Projects\CPP-3D-Game-Tutorial-Series-master\GDENG03-Engine\reactphysics3d;E:\Visual Studio Projects\CPP-3D-Game-Tutorial-Series-master\GDENG03-Engine\reactphysics3d\include;E:\Visual Studio Projects\CPP-3D-Game-Tutorial-Series-master\GDENG03-Engine\Assets;$(SolutionDir)\IMGUI;$(SolutionDir)\reactphysics3d;$(SolutionDir)\reactphysics3d\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

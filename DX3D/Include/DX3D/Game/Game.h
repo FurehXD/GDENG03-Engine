@@ -29,6 +29,7 @@ namespace dx3d
     class Camera;
     class FogShader;
     class CameraObject;
+    class UIManager;
     class ViewportManager;
     class SelectionSystem;
     class SceneStateManager;
@@ -91,15 +92,10 @@ namespace dx3d
     private:
         void render();
         void renderScene(Camera& camera, const Matrix4x4& projMatrix, RenderTexture* renderTarget = nullptr);
-        void renderUI();
         void createRenderingResources();
         void update();
         void processInput(float deltaTime);
-        void updateSnowEmitter();
-        void debugRenderInfo();
-        void renderSceneHierarchy();
-        void renderInspector();
-        void renderDebugWindow();
+        void alignGameCameraWithView();
 
         //Spawners
         void spawnCubeDemo();
@@ -123,6 +119,9 @@ namespace dx3d
         std::unique_ptr<GraphicsEngine> m_graphicsEngine{};
         std::unique_ptr<Display> m_display{};
         bool m_isRunning{ true };
+
+        std::unique_ptr<UIManager> m_uiManager{};
+        
 
         std::unique_ptr<Camera> m_sceneCamera{};
         std::shared_ptr<CameraObject> m_gameCamera{};

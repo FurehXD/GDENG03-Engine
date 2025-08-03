@@ -1,6 +1,6 @@
 #pragma once
 #include <DX3D/Graphics/Primitives/AGameObject.h>
-#include <DX3D/Game/Camera.h>
+#include <DX3D/Game/SceneCamera.h>
 #include <memory>
 
 namespace dx3d
@@ -14,8 +14,8 @@ namespace dx3d
 
         virtual void update(float deltaTime) override;
 
-        Camera& getCamera() { return *m_camera; }
-        const Camera& getCamera() const { return *m_camera; }
+        SceneCamera& getCamera() { return *m_camera; }
+        const SceneCamera& getCamera() const { return *m_camera; }
 
         void setFOV(float fov) { m_fov = fov; }
         void setNearPlane(float nearPlane) { m_nearPlane = nearPlane; }
@@ -26,7 +26,7 @@ namespace dx3d
         float getFarPlane() const { return m_farPlane; }
 
         Matrix4x4 getProjectionMatrix(float aspectRatio) const;
-        void alignWithView(const Camera& viewCamera);
+        void alignWithView(const SceneCamera& viewCamera);
 
     protected:
         virtual CollisionShapeType getCollisionShapeType() const override
@@ -38,7 +38,7 @@ namespace dx3d
         void syncCameraTransform();
 
     private:
-        std::unique_ptr<Camera> m_camera;
+        std::unique_ptr<SceneCamera> m_camera;
         float m_fov = 1.0472f;
         float m_nearPlane = 0.1f;
         float m_farPlane = 100.0f;

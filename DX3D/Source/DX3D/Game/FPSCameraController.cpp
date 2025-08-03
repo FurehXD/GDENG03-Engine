@@ -1,5 +1,5 @@
 #include <DX3D/Game/FPSCameraController.h>
-#include <DX3D/Game/Camera.h>
+#include <DX3D/Game/SceneCamera.h>
 #include <DX3D/Input/Input.h>
 #include <Windows.h>
 

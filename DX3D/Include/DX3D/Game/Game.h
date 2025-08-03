@@ -6,11 +6,14 @@
 #include <chrono>
 #include <memory>
 #include <vector>
+#include <typeinfo>
 #include <d3d11.h> 
 #include "imgui.h"
 #include "imgui_impl_win32.h"
 #include "imgui_impl_dx11.h"
 #include <DX3D/Graphics/Shaders/ModelVertexShader.h>
+#include <DX3D/Graphics/Light.h>
+#include <DX3D/Graphics/Primitives/LightObject.h> 
 
 namespace dx3d
 {
@@ -19,14 +22,16 @@ namespace dx3d
     class ConstantBuffer;
     class VertexShader;
     class PixelShader;
+    class Light;
     class AGameObject;
     class Cube;
     class Plane;
     class Sphere;
     class Cylinder;
     class Capsule;
+    class LightObject;
     class DepthBuffer;
-    class Camera;
+    class SceneCamera;
     class FogShader;
     class CameraObject;
     class UIManager;
@@ -91,7 +96,7 @@ namespace dx3d
 
     private:
         void render();
-        void renderScene(Camera& camera, const Matrix4x4& projMatrix, RenderTexture* renderTarget = nullptr);
+        void renderScene(SceneCamera& camera, const Matrix4x4& projMatrix, RenderTexture* renderTarget = nullptr);
         void createRenderingResources();
         void update();
         void processInput(float deltaTime);
@@ -105,14 +110,23 @@ namespace dx3d
         void spawnCylinder();
         void spawnPlane();
         void spawnModel(const std::string& filename);
+        void spawnDirectionalLight();
+        void spawnPointLight();
+        void spawnSpotLight();
 
         // Scene State Management Methods
         void onSceneStateChanged(SceneState oldState, SceneState newState);
         void updatePhysics(float deltaTime);
 
         std::string getObjectDisplayName(std::shared_ptr<AGameObject> object, int index);
+        std::string getCurrentTimeAndDate();
         std::string getObjectIcon(std::shared_ptr<AGameObject> object);
         std::shared_ptr<AGameObject> createObjectCopy(std::shared_ptr<AGameObject> original);
+
+        void saveScene();
+        void loadScene(const std::string& filename);
+        std::vector<std::string> getSavedSceneFiles() const;
+
 
     private:
         std::unique_ptr<Logger> m_loggerPtr{};
@@ -123,7 +137,7 @@ namespace dx3d
         std::unique_ptr<UIManager> m_uiManager{};
         
 
-        std::unique_ptr<Camera> m_sceneCamera{};
+        std::unique_ptr<SceneCamera> m_sceneCamera{};
         std::shared_ptr<CameraObject> m_gameCamera{};
         std::unique_ptr<ViewportManager> m_viewportManager{};
         std::unique_ptr<SelectionSystem> m_selectionSystem{};
@@ -190,5 +204,9 @@ namespace dx3d
 
         std::chrono::steady_clock::time_point m_previousTime;
         float m_deltaTime{ 0.0f };
+
+        std::vector<std::shared_ptr<LightObject>> m_lights;
+        std::shared_ptr<ConstantBuffer> m_lightConstantBuffer;
+        Vector4 m_ambientColor = { 0.2f, 0.2f, 0.2f, 1.0f };
     };
 }

@@ -9,7 +9,7 @@
 namespace dx3d
 {
     // Forward declaration to resolve compiler errors
-    class Camera;
+    class SceneCamera;
 
     // Structure to hold per-instance data for rendering
     struct ParticleInstanceData
@@ -52,7 +52,7 @@ namespace dx3d
         void update(float deltaTime);
 
         // Get instance data for rendering
-        void fillInstanceData(std::vector<ParticleInstanceData>& instanceData, const Camera& camera);
+        void fillInstanceData(std::vector<ParticleInstanceData>& instanceData, const SceneCamera& camera);
 
         // Control methods
         void start() { m_active = true; }

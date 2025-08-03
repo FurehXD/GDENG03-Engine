@@ -73,7 +73,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>Bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>Intermediate\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>E:\Visual Studio Projects\CPP-3D-Game-Tutorial-Series-master\GDENG03-Engine\DX3D\Include\DX3D\Assets;DX3D/Include;DX3D/Source;DX3D/Assets;DX3D/Physics;DX3D/ECS;$(SolutionDir)DX3D\Include\DX3D\Assets;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)\DX3D\Include\DX3D\Assets;DX3D/Include;DX3D/Source;DX3D/Assets;DX3D/Physics;DX3D/ECS;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -111,12 +111,13 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>E:\Visual Studio Projects\CPP-3D-Game-Tutorial-Series-master\GDENG03-Engine\reactphysics3d;E:\Visual Studio Projects\CPP-3D-Game-Tutorial-Series-master\GDENG03-Engine\reactphysics3d\include;E:\Visual Studio Projects\CPP-3D-Game-Tutorial-Series-master\GDENG03-Engine\Assets;$(SolutionDir)\IMGUI;$(SolutionDir)\reactphysics3d;$(SolutionDir)\reactphysics3d\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)reactphysics3d;$(SolutionDir)reactphysics3d\include;$(SolutionDir)Assets;$(SolutionDir)\IMGUI;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>d3d11.lib;reactphysics3d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)\reactphysics3d;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -139,10 +140,11 @@
     <ClCompile Include="DX3D\Source\DX3D\Game\FPSCameraController.cpp" />
     <ClCompile Include="DX3D\Source\DX3D\Game\UndoRedoSystem.cpp" />
     <ClCompile Include="DX3D\Source\DX3D\Graphics\Material.cpp" />
+    <ClCompile Include="DX3D\Source\DX3D\Graphics\Primitives\LightObject.cpp" />
     <ClCompile Include="DX3D\Source\DX3D\Physics\PhysicsSystem.cpp" />
     <ClCompile Include="DX3D\Source\DX3D\Assets\AssetManager.cpp" />
     <ClCompile Include="DX3D\Source\DX3D\Assets\ModelLoader.cpp" />
-    <ClCompile Include="DX3D\Source\DX3D\Game\Camera.cpp" />
+    <ClCompile Include="DX3D\Source\DX3D\Game\SceneCamera.cpp" />
     <ClCompile Include="DX3D\Source\DX3D\Game\SelectionSystem.cpp" />
     <ClCompile Include="DX3D\Source\DX3D\Game\ViewportManager.cpp" />
     <ClCompile Include="DX3D\Source\DX3D\Graphics\Mesh.cpp" />
@@ -206,12 +208,14 @@
     <ClInclude Include="DX3D\Include\DX3D\Assets\ModelLoader.h" />
     <ClInclude Include="DX3D\Include\DX3D\Assets\tiny_obj_loader.h" />
     <ClInclude Include="DX3D\Include\DX3D\ECS\Entity.h" />
-    <ClInclude Include="DX3D\Include\DX3D\Game\Camera.h" />
+    <ClInclude Include="DX3D\Include\DX3D\Game\SceneCamera.h" />
     <ClInclude Include="DX3D\Include\DX3D\Game\FPSCameraController.h" />
     <ClInclude Include="DX3D\Include\DX3D\Game\SelectionSystem.h" />
     <ClInclude Include="DX3D\Include\DX3D\Game\UndoRedoSystem.h" />
+    <ClInclude Include="DX3D\Include\DX3D\Graphics\Light.h" />
     <ClInclude Include="DX3D\Include\DX3D\Graphics\Material.h" />
     <ClInclude Include="DX3D\Include\DX3D\Graphics\Mesh.h" />
+    <ClInclude Include="DX3D\Include\DX3D\Graphics\Primitives\LightObject.h" />
     <ClInclude Include="DX3D\Include\DX3D\Graphics\Primitives\Model.h" />
     <ClInclude Include="DX3D\Include\DX3D\Graphics\Primitives\CameraGizmo.h" />
     <ClInclude Include="DX3D\Include\DX3D\Graphics\Primitives\CameraObject.h" />

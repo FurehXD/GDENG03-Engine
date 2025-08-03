@@ -3,6 +3,9 @@
 *.suo
 *.userprefs
 
+#Client-Sided Save Files
+*.json
+
 # User-specific files for Visual Studio for Mac
 .vscode/
 

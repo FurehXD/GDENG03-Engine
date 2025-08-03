@@ -6,6 +6,7 @@
 #include <DX3D/ECS/Components/TransformComponent.h>
 #include <DX3D/ECS/Components/PhysicsComponent.h>
 #include <memory>
+#include <typeinfo>
 
 namespace dx3d
 {
@@ -63,6 +64,8 @@ namespace dx3d
         // Virtual methods that can be overridden by derived classes
         virtual void update(float deltaTime) {}
         virtual void render() {}
+
+        std::string getObjectType();
 
     protected:
         // For derived classes to override collision shape creation

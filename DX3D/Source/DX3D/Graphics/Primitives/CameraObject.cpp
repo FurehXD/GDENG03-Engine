@@ -5,14 +5,14 @@ using namespace dx3d;
 CameraObject::CameraObject()
     : AGameObject()
 {
-    m_camera = std::make_unique<Camera>();
+    m_camera = std::make_unique<SceneCamera>();
     syncCameraTransform();
 }
 
 CameraObject::CameraObject(const Vector3& position, const Vector3& rotation)
     : AGameObject(position, rotation)
 {
-    m_camera = std::make_unique<Camera>();
+    m_camera = std::make_unique<SceneCamera>();
     syncCameraTransform();
 }
 
@@ -44,7 +44,7 @@ Matrix4x4 CameraObject::getProjectionMatrix(float aspectRatio) const
     return Matrix4x4::CreatePerspectiveFovLH(m_fov, aspectRatio, m_nearPlane, m_farPlane);
 }
 
-void CameraObject::alignWithView(const Camera& viewCamera)
+void CameraObject::alignWithView(const SceneCamera& viewCamera)
 {
     setPosition(viewCamera.getPosition());
 

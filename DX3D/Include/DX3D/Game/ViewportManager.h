@@ -6,7 +6,7 @@
 namespace dx3d
 {
     class RenderTexture;
-    class Camera;
+    class SceneCamera;
     class CameraObject;
 
     enum class ViewportType

@@ -4,7 +4,7 @@
 #include <DX3D/Graphics/RenderSystem.h>
 #include <DX3D/Graphics/DeviceContext.h>
 #include <DX3D/Graphics/Shaders/ParticleShader.h>
-#include <DX3D/Game/Camera.h>
+#include <DX3D/Game/SceneCamera.h>
 #include <d3d11.h>
 #include <d3dcompiler.h>
 
@@ -76,7 +76,7 @@ void ParticleSystem::update(float deltaTime)
     }
 }
 
-void ParticleSystem::render(DeviceContext& deviceContext, const Camera& camera, const Matrix4x4& projectionMatrix)
+void ParticleSystem::render(DeviceContext& deviceContext, const SceneCamera& camera, const Matrix4x4& projectionMatrix)
 {
     if (!m_initialized)
         return;

@@ -1,10 +1,10 @@
-#include <DX3D/Game/Camera.h>
+#include <DX3D/Game/SceneCamera.h>
 #include <cmath>
 #include <algorithm>
 
 using namespace dx3d;
 
-Camera::Camera()
+SceneCamera::SceneCamera()
     : m_position(0.0f, 0.0f, -5.0f)
     , m_worldUp(0.0f, 1.0f, 0.0f)
     , m_yaw(0.0f)     
@@ -15,7 +15,7 @@ Camera::Camera()
     updateViewMatrix();
 }
 
-Camera::Camera(const Vector3& position, const Vector3& target, const Vector3& up)
+SceneCamera::SceneCamera(const Vector3& position, const Vector3& target, const Vector3& up)
     : m_position(position)
     , m_worldUp(up)
     , m_roll(0.0f)
@@ -23,50 +23,50 @@ Camera::Camera(const Vector3& position, const Vector3& target, const Vector3& up
     lookAt(target);
 }
 
-void Camera::moveForward(float distance)
+void SceneCamera::moveForward(float distance)
 {
     m_position += m_forward * distance;
     updateViewMatrix();
 }
 
-void Camera::moveBackward(float distance)
+void SceneCamera::moveBackward(float distance)
 {
     m_position -= m_forward * distance;
     updateViewMatrix();
 }
 
-void Camera::moveLeft(float distance)
+void SceneCamera::moveLeft(float distance)
 {
     m_position -= m_right * distance;
     updateViewMatrix();
 }
 
-void Camera::moveRight(float distance)
+void SceneCamera::moveRight(float distance)
 {
     m_position += m_right * distance;
     updateViewMatrix();
 }
 
-void Camera::moveUp(float distance)
+void SceneCamera::moveUp(float distance)
 {
     m_position += m_worldUp * distance;
     updateViewMatrix();
 }
 
-void Camera::moveDown(float distance)
+void SceneCamera::moveDown(float distance)
 {
     m_position -= m_worldUp * distance;
     updateViewMatrix();
 }
 
-void Camera::rotateYaw(float angle)
+void SceneCamera::rotateYaw(float angle)
 {
     m_yaw += angle;
     updateVectors();
     updateViewMatrix();
 }
 
-void Camera::rotatePitch(float angle)
+void SceneCamera::rotatePitch(float angle)
 {
     m_pitch += angle;
 
@@ -78,14 +78,14 @@ void Camera::rotatePitch(float angle)
     updateViewMatrix();
 }
 
-void Camera::rotateRoll(float angle)
+void SceneCamera::rotateRoll(float angle)
 {
     m_roll += angle;
     updateVectors();
     updateViewMatrix();
 }
 
-void Camera::onMouseMove(float deltaX, float deltaY, float sensitivity)
+void SceneCamera::onMouseMove(float deltaX, float deltaY, float sensitivity)
 {
     // Yaw rotation (left/right)
     rotateYaw(deltaX * sensitivity);
@@ -94,18 +94,18 @@ void Camera::onMouseMove(float deltaX, float deltaY, float sensitivity)
     rotatePitch(-deltaY * sensitivity);
 }
 
-void Camera::update()
+void SceneCamera::update()
 {
     updateViewMatrix();
 }
 
-void Camera::setPosition(const Vector3& position)
+void SceneCamera::setPosition(const Vector3& position)
 {
     m_position = position;
     updateViewMatrix();
 }
 
-Vector3 Camera::getForward()
+Vector3 SceneCamera::getForward()
 {
     Vector3 forward;
 
@@ -117,7 +117,7 @@ Vector3 Camera::getForward()
     //return forward.normalized(); // if you have a normalize function
 }
 
-void Camera::lookAt(const Vector3& target)
+void SceneCamera::lookAt(const Vector3& target)
 {
     // Calculate direction from position to target
     Vector3 direction;
@@ -144,7 +144,7 @@ void Camera::lookAt(const Vector3& target)
     updateViewMatrix();
 }
 
-void Camera::updateVectors()
+void SceneCamera::updateVectors()
 {
     // Calculate forward vector from yaw and pitch
     float cosPitch = std::cos(m_pitch);
@@ -188,7 +188,7 @@ void Camera::updateVectors()
     }
 }
 
-void Camera::updateViewMatrix()
+void SceneCamera::updateViewMatrix()
 {
     Vector3 target = m_position + m_forward;
     m_viewMatrix = Matrix4x4::CreateLookAtLH(m_position, target, m_up);

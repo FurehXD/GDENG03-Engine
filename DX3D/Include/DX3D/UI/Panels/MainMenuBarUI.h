@@ -21,6 +21,12 @@ namespace dx3d
             std::function<void()> onSpawnPlane;
             std::function<void(const std::string&)> onSpawnModel;
             std::function<void()> onSpawnCubeDemo;
+            std::function<void()> onSpawnDirectionalLight;
+            std::function<void()> onSpawnPointLight;
+            std::function<void()> onSpawnSpotLight;
+            std::function<void()> onSaveScene;
+            std::function<void(const std::string&)> onLoadScene;
+            std::function<void()> onShowLoadSceneDialog;
         };
 
         MainMenuBarUI(

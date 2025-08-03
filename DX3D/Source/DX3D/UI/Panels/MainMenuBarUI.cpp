@@ -24,6 +24,19 @@ void MainMenuBarUI::render(const Callbacks& callbacks)
 {
     if (ImGui::BeginMainMenuBar())
     {
+        if (ImGui::BeginMenu("File"))
+        {
+            if (ImGui::MenuItem("Save Scene"))
+            {
+                callbacks.onSaveScene();
+            }
+            if (ImGui::MenuItem("Load Scene"))
+            {
+                if (callbacks.onShowLoadSceneDialog)
+                    callbacks.onShowLoadSceneDialog();
+            }
+            ImGui::EndMenu();
+        }
         if (ImGui::BeginMenu("Edit"))
         {
             bool canUndo = m_undoRedoSystem.canUndo();
@@ -131,6 +144,28 @@ void MainMenuBarUI::render(const Callbacks& callbacks)
                         callbacks.onSpawnPlane();
                 }
 
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Lights"))
+            {
+                if (ImGui::MenuItem("Directional Light", nullptr, false, isEditMode))
+                {
+                    if (callbacks.onSpawnDirectionalLight)
+                        callbacks.onSpawnDirectionalLight();
+                }
+
+                if (ImGui::MenuItem("Point Light", nullptr, false, isEditMode))
+                {
+                    if (callbacks.onSpawnPointLight)
+                        callbacks.onSpawnPointLight();
+                }
+
+                if (ImGui::MenuItem("Spot Light", nullptr, false, isEditMode))
+                {
+                    if (callbacks.onSpawnSpotLight)
+                        callbacks.onSpawnSpotLight();
+                }
                 ImGui::EndMenu();
             }
 

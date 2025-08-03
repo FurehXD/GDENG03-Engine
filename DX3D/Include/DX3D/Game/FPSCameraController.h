@@ -3,7 +3,7 @@
 
 namespace dx3d
 {
-    class Camera;
+    class SceneCamera;
     class Input;
 
     class FPSCameraController
@@ -12,7 +12,7 @@ namespace dx3d
         FPSCameraController();
         ~FPSCameraController();
 
-        void setCamera(Camera* camera) { m_camera = camera; }
+        void setCamera(SceneCamera* camera) { m_camera = camera; }
         void setMovementSpeed(float speed) { m_movementSpeed = speed; }
         void setMouseSensitivity(float sensitivity) { m_mouseSensitivity = sensitivity; }
 
@@ -27,7 +27,7 @@ namespace dx3d
         bool isCursorLocked() const { return m_cursorLocked; }
 
     private:
-        Camera* m_camera;
+        SceneCamera* m_camera;
         float m_movementSpeed;
         float m_mouseSensitivity;
         bool m_enabled;

@@ -7,7 +7,7 @@
 namespace dx3d
 {
     class AGameObject;
-    class Camera;
+    class SceneCamera;
 
     class SelectionSystem
     {
@@ -20,7 +20,7 @@ namespace dx3d
 
         std::shared_ptr<AGameObject> pickObject(
             const std::vector<std::shared_ptr<AGameObject>>& objects,
-            const Camera& camera,
+            const SceneCamera& camera,
             float mouseX, float mouseY,
             ui32 viewportWidth, ui32 viewportHeight);
 

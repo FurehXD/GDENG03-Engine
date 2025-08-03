@@ -9,7 +9,7 @@
 namespace dx3d
 {
     class AGameObject;
-    class Camera;
+    class SceneCamera;
     class PhysicsSystem;
 
     struct ObjectSnapshot

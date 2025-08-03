@@ -4,12 +4,12 @@
 
 namespace dx3d
 {
-    class Camera
+    class SceneCamera
     {
     public:
-        Camera();
-        Camera(const Vector3& position, const Vector3& target, const Vector3& up = Vector3(0.0f, 1.0f, 0.0f));
-        ~Camera() = default;
+        SceneCamera();
+        SceneCamera(const Vector3& position, const Vector3& target, const Vector3& up = Vector3(0.0f, 1.0f, 0.0f));
+        ~SceneCamera() = default;
 
         // Movement methods
         void moveForward(float distance);
@@ -36,8 +36,10 @@ namespace dx3d
         const Vector3& getForward() const { return m_forward; }
         const Vector3& getRight() const { return m_right; }
         const Vector3& getUp() const { return m_up; }
+        const Vector3& getWorldUp() const { return m_worldUp; }
         float getYaw() const { return m_yaw; }
         float getPitch() const { return m_pitch; }
+        float getRoll() const { return m_roll; }
 
         Vector3 getForward();
 
@@ -50,7 +52,7 @@ namespace dx3d
         void updateViewMatrix();
 
     private:
-        // Camera position and orientation
+        // SceneCamera position and orientation
         Vector3 m_position;
         Vector3 m_forward;  // Direction camera is looking
         Vector3 m_right;    // Right vector

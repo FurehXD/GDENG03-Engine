@@ -15,7 +15,7 @@ namespace dx3d
 {
     class GraphicsEngine;
     class DeviceContext;
-    class Camera;
+    class SceneCamera;
 
     class ParticleSystem
     {
@@ -31,7 +31,7 @@ namespace dx3d
         // Update all emitters
         void update(float deltaTime);
         // Render all particles
-        void render(DeviceContext& deviceContext, const Camera& camera, const Matrix4x4& projectionMatrix);
+        void render(DeviceContext& deviceContext, const SceneCamera& camera, const Matrix4x4& projectionMatrix);
 
         // Create and manage emitters
         std::shared_ptr<ParticleEmitter> createEmitter(

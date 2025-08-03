@@ -1,5 +1,5 @@
 #include <DX3D/Particles/ParticleEmitter.h>
-#include <DX3D/Game/Camera.h>
+#include <DX3D/Game/SceneCamera.h>
 #include <random>
 #include <algorithm>
 
@@ -67,7 +67,7 @@ void ParticleEmitter::update(float deltaTime)
     }
 }
 
-void ParticleEmitter::fillInstanceData(std::vector<ParticleInstanceData>& instanceData, const Camera& camera)
+void ParticleEmitter::fillInstanceData(std::vector<ParticleInstanceData>& instanceData, const SceneCamera& camera)
 {
     for (const auto& particle : m_particles)
     {

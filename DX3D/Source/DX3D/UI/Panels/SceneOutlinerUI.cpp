@@ -10,6 +10,7 @@
 #include <DX3D/Graphics/Primitives/Cylinder.h>
 #include <DX3D/Graphics/Primitives/Capsule.h>
 #include <DX3D/Graphics/Primitives/CameraObject.h>
+#include <DX3D/Graphics/Primitives/LightObject.h>
 #include <imgui.h>
 
 using namespace dx3d;
@@ -82,6 +83,15 @@ std::string SceneOutlinerUI::getObjectDisplayName(std::shared_ptr<AGameObject> o
     else if (std::dynamic_pointer_cast<Cylinder>(object)) objectName = "Cylinder";
     else if (std::dynamic_pointer_cast<Capsule>(object)) objectName = "Capsule";
     else if (std::dynamic_pointer_cast<CameraObject>(object)) objectName = "Game Camera";
+    else if (auto light = std::dynamic_pointer_cast<LightObject>(object))
+    {
+        switch (light->getLightData().type)
+        {
+        case LIGHT_TYPE_DIRECTIONAL: objectName = "Directional Light"; break;
+        case LIGHT_TYPE_POINT:       objectName = "Point Light"; break;
+        case LIGHT_TYPE_SPOT:        objectName = "Spot Light"; break;
+        }
+    }
 
     return objectName + " " + std::to_string(index);
 }
@@ -96,3 +106,4 @@ std::string SceneOutlinerUI::getObjectIcon(std::shared_ptr<AGameObject> object)
     else if (std::dynamic_pointer_cast<CameraObject>(object)) return "[CAM]";
     return "[?]";
 }
+

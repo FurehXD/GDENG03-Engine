@@ -20,6 +20,7 @@ AGameObject::AGameObject()
     transform.rotation = m_transform.rotation;
     transform.scale = m_transform.scale;
     componentManager.addComponent(m_entity.getID(), transform);
+
 }
 
 AGameObject::AGameObject(const Vector3& position, const Vector3& rotation, const Vector3& scale)
@@ -242,6 +243,24 @@ void AGameObject::setLinearVelocity(const Vector3& velocity)
         rp3d::Vector3 reactVelocity = PhysicsSystem::toReactVector(velocity);
         physicsComp->rigidBody->setLinearVelocity(reactVelocity);
     }
+}
+
+std::string AGameObject::getObjectType() 
+{
+	const std::type_info& typeInfo = typeid(*this);
+	std::string rawName = typeInfo.name();
+
+	// Initially returns as "class dx3d::[GameObjectType]" but I want to make it as "[GameObjectType]"
+	std::string removedPrefix = "class dx3d::";
+	int removdPrefixLength = removedPrefix.length();
+
+	size_t startPos = rawName.find(removedPrefix);
+
+    if (startPos != std::string::npos) {
+		// Remove the prefix "class dx3d::" if it exists
+        rawName.erase(startPos, removdPrefixLength);
+    }
+	return rawName; // Returns a string representation of the type name
 }
 
 PhysicsComponent AGameObject::createPhysicsComponent() const

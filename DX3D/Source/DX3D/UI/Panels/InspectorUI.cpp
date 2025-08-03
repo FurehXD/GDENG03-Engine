@@ -9,6 +9,7 @@
 #include <DX3D/Graphics/Primitives/Sphere.h>
 #include <DX3D/Graphics/Primitives/Cylinder.h>
 #include <DX3D/Graphics/Primitives/Capsule.h>
+#include <DX3D/Graphics/Primitives/LightObject.h>
 #include <DX3D/ECS/ComponentManager.h>
 #include <DX3D/ECS/Components/PhysicsComponent.h>
 #include <DX3D/Core/Logger.h>
@@ -251,6 +252,7 @@ void InspectorUI::renderObjectInfo(std::shared_ptr<AGameObject> object)
         else if (std::dynamic_pointer_cast<Cylinder>(object)) objectType = "Cylinder";
         else if (std::dynamic_pointer_cast<Capsule>(object)) objectType = "Capsule";
         else if (std::dynamic_pointer_cast<CameraObject>(object)) objectType = "Camera";
+        else if (std::dynamic_pointer_cast<LightObject>(object)) objectType = "Light";
 
         ImGui::Text("Type: %s", objectType.c_str());
         ImGui::Text("Has Physics: %s", object->hasPhysics() ? "Yes" : "No");

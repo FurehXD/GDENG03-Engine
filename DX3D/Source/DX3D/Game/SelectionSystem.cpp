@@ -1,6 +1,6 @@
 #include <DX3D/Game/SelectionSystem.h>
 #include <DX3D/Graphics/Primitives/AGameObject.h>
-#include <DX3D/Game/Camera.h>
+#include <DX3D/Game/SceneCamera.h>
 #include <DirectXMath.h>
 #include <limits>
 
@@ -22,7 +22,7 @@ void SelectionSystem::setSelectedObject(std::shared_ptr<AGameObject> object)
 
 std::shared_ptr<AGameObject> SelectionSystem::pickObject(
     const std::vector<std::shared_ptr<AGameObject>>& objects,
-    const Camera& camera,
+    const SceneCamera& camera,
     float mouseX, float mouseY,
     ui32 viewportWidth, ui32 viewportHeight)
 {

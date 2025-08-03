@@ -13,6 +13,7 @@ Cube::Cube() : AGameObject()
 Cube::Cube(const Vector3& position, const Vector3& rotation, const Vector3& scale)
     : AGameObject(position, rotation, scale)
 {
+    std::cout << this->getObjectType() << std::endl;
 }
 
 void Cube::update(float deltaTime)

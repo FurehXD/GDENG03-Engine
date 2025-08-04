@@ -20,31 +20,40 @@ void SelectionSystem::setSelectedObject(std::shared_ptr<AGameObject> object)
     m_selectedObject = object;
 }
 
+// THIS IS THE CORRECTED FUNCTION
 std::shared_ptr<AGameObject> SelectionSystem::pickObject(
     const std::vector<std::shared_ptr<AGameObject>>& objects,
     const SceneCamera& camera,
     float mouseX, float mouseY,
     ui32 viewportWidth, ui32 viewportHeight)
 {
+    // 1. Convert mouse coordinates to Normalized Device Coordinates (NDC)
+    //    Range: [-1, 1] for X, [-1, 1] for Y
     float ndcX = (2.0f * mouseX) / viewportWidth - 1.0f;
     float ndcY = 1.0f - (2.0f * mouseY) / viewportHeight;
 
-    XMVECTOR rayClip = XMVectorSet(ndcX, ndcY, -1.0f, 1.0f);
-
+    // 2. Get the view and projection matrices from the camera
     float aspectRatio = static_cast<float>(viewportWidth) / viewportHeight;
     XMMATRIX projMatrix = Matrix4x4::CreatePerspectiveFovLH(1.0472f, aspectRatio, 0.1f, 100.0f).toXMMatrix();
-    XMMATRIX invProj = XMMatrixInverse(nullptr, projMatrix);
+    XMMATRIX viewMatrix = camera.getViewMatrix().toXMMatrix();
 
-    XMVECTOR rayView = XMVector4Transform(rayClip, invProj);
-    rayView = XMVectorSet(XMVectorGetX(rayView), XMVectorGetY(rayView), -1.0f, 0.0f);
+    // 3. Compute the inverse view-projection matrix
+    XMMATRIX invViewProj = XMMatrixInverse(nullptr, viewMatrix * projMatrix);
 
-    XMMATRIX invView = XMMatrixInverse(nullptr, camera.getViewMatrix().toXMMatrix());
-    XMVECTOR rayWorld = XMVector4Transform(rayView, invView);
-    XMVECTOR rayDir = XMVector3Normalize(rayWorld);
+    // 4. Unproject the 2D mouse coordinates into a 3D ray direction
+    XMVECTOR rayOriginClip = XMVectorSet(ndcX, ndcY, 0.0f, 1.0f); // Near plane
+    XMVECTOR rayEndClip = XMVectorSet(ndcX, ndcY, 1.0f, 1.0f);    // Far plane
 
+    XMVECTOR rayOriginWorld = XMVector3TransformCoord(rayOriginClip, invViewProj);
+    XMVECTOR rayEndWorld = XMVector3TransformCoord(rayEndClip, invViewProj);
+    XMVECTOR rayDir = XMVector3Normalize(rayEndWorld - rayOriginWorld);
+
+    // 5. Store the ray origin and direction
     Vector3 rayOrigin = camera.getPosition();
     Vector3 rayDirection;
     XMStoreFloat3(reinterpret_cast<XMFLOAT3*>(&rayDirection), rayDir);
+
+    // --- The rest of the function remains the same ---
 
     std::shared_ptr<AGameObject> closestObject = nullptr;
     float closestT = std::numeric_limits<float>::max();
@@ -52,8 +61,9 @@ std::shared_ptr<AGameObject> SelectionSystem::pickObject(
     for (const auto& object : objects)
     {
         Vector3 objectPos = object->getPosition();
-        Vector3 aabbMin = objectPos - Vector3(0.5f, 0.5f, 0.5f);
-        Vector3 aabbMax = objectPos + Vector3(0.5f, 0.5f, 0.5f);
+        Vector3 scale = object->getScale(); // Use object's scale for accurate bounding box
+        Vector3 aabbMin = objectPos - Vector3(0.5f * scale.x, 0.5f * scale.y, 0.5f * scale.z);
+        Vector3 aabbMax = objectPos + Vector3(0.5f * scale.x, 0.5f * scale.y, 0.5f * scale.z);
 
         float t;
         if (rayIntersectsAABB(rayOrigin, rayDirection, aabbMin, aabbMax, t))

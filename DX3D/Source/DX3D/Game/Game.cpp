@@ -398,17 +398,17 @@ void dx3d::Game::update()
 
     m_sceneStateManager->update(m_deltaTime);
 
-    processInput(m_deltaTime);
-
+    // --- FIX: Update the camera BEFORE processing input ---
     m_sceneCamera->update();
+
+    processInput(m_deltaTime);
 
     if (m_sceneStateManager->isPlayMode())
     {
         m_fpsController->update(m_deltaTime);
     }
 
-
-    if(m_deltaTime > 0.0f)
+    if (m_deltaTime > 0.0f)
         updatePhysics(m_deltaTime);
 
     for (auto& gameObject : m_gameObjects)

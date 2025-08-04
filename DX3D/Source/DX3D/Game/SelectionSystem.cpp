@@ -20,7 +20,6 @@ void SelectionSystem::setSelectedObject(std::shared_ptr<AGameObject> object)
     m_selectedObject = object;
 }
 
-// THIS IS THE CORRECTED FUNCTION
 std::shared_ptr<AGameObject> SelectionSystem::pickObject(
     const std::vector<std::shared_ptr<AGameObject>>& objects,
     const SceneCamera& camera,
@@ -52,8 +51,6 @@ std::shared_ptr<AGameObject> SelectionSystem::pickObject(
     Vector3 rayOrigin = camera.getPosition();
     Vector3 rayDirection;
     XMStoreFloat3(reinterpret_cast<XMFLOAT3*>(&rayDirection), rayDir);
-
-    // --- The rest of the function remains the same ---
 
     std::shared_ptr<AGameObject> closestObject = nullptr;
     float closestT = std::numeric_limits<float>::max();

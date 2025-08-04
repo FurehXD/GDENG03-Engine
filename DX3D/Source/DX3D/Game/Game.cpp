@@ -398,7 +398,6 @@ void dx3d::Game::update()
 
     m_sceneStateManager->update(m_deltaTime);
 
-    // --- FIX: Update the camera BEFORE processing input ---
     m_sceneCamera->update();
 
     processInput(m_deltaTime);

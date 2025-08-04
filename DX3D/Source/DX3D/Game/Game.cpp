@@ -99,6 +99,21 @@ dx3d::Game::~Game()
 {
     DX3DLogInfo("Game deallocation started.");
 
+    ImGui_ImplDX11_Shutdown();
+    ImGui_ImplWin32_Shutdown();
+    ImGui::DestroyContext();
+
+    // Manually disable physics on every game object.
+    // This unregisters them from the physics world while it's still active.
+    for (const auto& go : m_gameObjects)
+    {
+        if (go->hasPhysics())
+        {
+            go->disablePhysics();
+        }
+    }
+    m_gameObjects.clear();
+
     PhysicsSystem::getInstance().shutdown();
 
     if (m_particleDepthState) m_particleDepthState->Release();

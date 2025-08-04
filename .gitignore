@@ -80,3 +80,4 @@ wwwroot/
 # Backup files
 *.bak
 *.swp
+imgui.ini

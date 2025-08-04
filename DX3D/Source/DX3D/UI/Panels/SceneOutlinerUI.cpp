@@ -61,14 +61,64 @@ void SceneOutlinerUI::render(float deltaTime)
     int objectId = 0;
     for (const auto& gameObject : m_gameObjects)
     {
-        std::string label = getObjectDisplayName(gameObject, objectId++);
+        ImGui::PushID(objectId);
+
+        // Create a horizontal group for the button and selectable
+        ImGui::BeginGroup();
+
+        // Enable/Disable button
+        bool isEnabled = gameObject->isEnabled();
+        const char* buttonLabel = isEnabled ? "Enabled" : "Disabled";
+
+        // Set button color based on state
+        if (!isEnabled)
+        {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.2f, 0.2f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.6f, 0.3f, 0.3f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.4f, 0.1f, 0.1f, 1.0f));
+        }
+        else
+        {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.5f, 0.2f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.6f, 0.3f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.4f, 0.1f, 1.0f));
+        }
+
+        if (ImGui::SmallButton(buttonLabel))
+        {
+            gameObject->setEnabled(!isEnabled);
+        }
+
+        ImGui::PopStyleColor(3);
+
+        ImGui::SameLine();
+
+        // Object name as selectable
+        std::string label = getObjectDisplayName(gameObject, objectId);
+
+        // Gray out text if disabled
+        if (!isEnabled)
+        {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+        }
 
         bool isSelected = (gameObject == m_selectionSystem.getSelectedObject());
         if (ImGui::Selectable(label.c_str(), isSelected))
         {
             m_controller.onObjectSelected(gameObject);
         }
+
+        if (!isEnabled)
+        {
+            ImGui::PopStyleColor();
+        }
+
+        ImGui::EndGroup();
+        ImGui::PopID();
+
+        objectId++;
     }
+
     ImGui::EndChild();
 
     ImGui::End();
@@ -106,4 +156,3 @@ std::string SceneOutlinerUI::getObjectIcon(std::shared_ptr<AGameObject> object)
     else if (std::dynamic_pointer_cast<CameraObject>(object)) return "[CAM]";
     return "[?]";
 }
-

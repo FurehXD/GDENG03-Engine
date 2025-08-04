@@ -392,12 +392,16 @@ void dx3d::Game::update()
         m_fpsController->update(m_deltaTime);
     }
 
+
     if(m_deltaTime > 0.0f)
         updatePhysics(m_deltaTime);
 
     for (auto& gameObject : m_gameObjects)
     {
-        gameObject->update(m_deltaTime);
+        if (gameObject->isEnabled())
+        {
+            gameObject->update(m_deltaTime);
+        }
     }
 
     static float debugTimer = 0.0f;
@@ -536,8 +540,6 @@ void dx3d::Game::loadScene(const std::string& filename)
         }
     }
 
-    // Crucially, re-add the game camera to the gameObjects list after it was cleared.
-    // Your save function includes it, so your load should too.
     m_gameObjects.push_back(m_gameCamera);
 
     DX3DLogInfo(("Scene loaded successfully from " + filename).c_str());
@@ -791,8 +793,13 @@ void dx3d::Game::renderScene(SceneCamera& camera, const Matrix4x4& projMatrix, R
 
     bool isSceneView = (&camera == m_sceneCamera.get());
 
+
+
     for (const auto& gameObject : m_gameObjects)
     {
+        if (!gameObject->isEnabled())
+            continue;
+
         bool isCamera = std::dynamic_pointer_cast<CameraObject>(gameObject) != nullptr;
         if (!isSceneView && isCamera)
             continue;
@@ -844,6 +851,88 @@ void dx3d::Game::renderScene(SceneCamera& camera, const Matrix4x4& projMatrix, R
             deviceContext.setIndexBuffer(*m_capsuleIndexBuffer);
             indexCount = Capsule::GetIndexCount();
             bufferSet = true;
+        }
+
+        else if (auto model = std::dynamic_pointer_cast<Model>(gameObject))
+        {
+            // Handle Model rendering
+            if (model->isReadyForRendering())
+            {
+                // Switch to model shaders
+                deviceContext.setVertexShader(m_modelVertexShader->getShader());
+                deviceContext.setPixelShader(m_modelPixelShader->getShader());
+                deviceContext.setInputLayout(m_modelVertexShader->getInputLayout());
+
+                // Set up model material constant buffer
+                ModelMaterialConstants mmc = {};
+
+                // Render each mesh in the model
+                for (size_t meshIdx = 0; meshIdx < model->getMeshCount(); ++meshIdx)
+                {
+                    auto mesh = model->getMesh(meshIdx);
+                    if (!mesh || !mesh->isReadyForRendering())
+                        continue;
+
+                    // Set vertex and index buffers for this mesh
+                    deviceContext.setVertexBuffer(*mesh->getVertexBuffer());
+                    deviceContext.setIndexBuffer(*mesh->getIndexBuffer());
+
+                    // Set up material
+                    auto material = mesh->getMaterial();
+                    if (material)
+                    {
+                        mmc.diffuseColor = material->getDiffuseColor();
+                        mmc.ambientColor = material->getAmbientColor();
+                        mmc.specularColor = material->getSpecularColor();
+                        mmc.emissiveColor = material->getEmissiveColor();
+                        mmc.specularPower = material->getSpecularPower();
+                        mmc.opacity = material->getOpacity();
+                        mmc.hasTexture = material->hasDiffuseTexture();
+
+                        // Set texture if available
+                        if (material->hasDiffuseTexture())
+                        {
+                            auto texture = material->getDiffuseTexture();
+                            ID3D11ShaderResourceView* srv = texture->getShaderResourceView();
+                            ID3D11SamplerState* sampler = texture->getSamplerState();
+                            d3dContext->PSSetShaderResources(0, 1, &srv);
+                            d3dContext->PSSetSamplers(0, 1, &sampler);
+                        }
+                    }
+                    else
+                    {
+                        // Default material
+                        mmc.diffuseColor = Vector4(0.7f, 0.7f, 0.7f, 1.0f);
+                        mmc.ambientColor = Vector4(0.2f, 0.2f, 0.2f, 1.0f);
+                        mmc.specularColor = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+                        mmc.emissiveColor = Vector4(0.0f, 0.0f, 0.0f, 1.0f);
+                        mmc.specularPower = 32.0f;
+                        mmc.opacity = 1.0f;
+                        mmc.hasTexture = false;
+                    }
+
+                    // Update material constant buffer
+                    m_modelMaterialConstantBuffer->update(deviceContext, &mmc);
+                    ID3D11Buffer* materialCb = m_modelMaterialConstantBuffer->getBuffer();
+                    d3dContext->PSSetConstantBuffers(1, 1, &materialCb);
+
+                    // Set transformation matrix
+                    TransformationMatrices transformMatrices;
+                    transformMatrices.world = Matrix4x4::fromXMMatrix(DirectX::XMMatrixTranspose(gameObject->getWorldMatrix().toXMMatrix()));
+                    transformMatrices.view = Matrix4x4::fromXMMatrix(DirectX::XMMatrixTranspose(camera.getViewMatrix().toXMMatrix()));
+                    transformMatrices.projection = Matrix4x4::fromXMMatrix(DirectX::XMMatrixTranspose(projMatrix.toXMMatrix()));
+                    m_transformConstantBuffer->update(deviceContext, &transformMatrices);
+
+                    // Draw this mesh
+                    deviceContext.drawIndexed(mesh->getIndexCount(), 0, 0);
+                }
+
+                // Reset to fog shaders for other objects
+                deviceContext.setVertexShader(m_fogVertexShader->getShader());
+                deviceContext.setPixelShader(m_fogPixelShader->getShader());
+                deviceContext.setInputLayout(m_fogVertexShader->getInputLayout());
+                continue; // Skip the normal primitive rendering path
+            }
         }
 
         if (bufferSet)

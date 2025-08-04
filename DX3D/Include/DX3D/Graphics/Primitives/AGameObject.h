@@ -43,6 +43,10 @@ namespace dx3d
         void rotate(const Vector3& deltaRotation);
         void translate(const Vector3& deltaPosition);
 
+        // Enable/Disable functionality
+        void setEnabled(bool enabled);
+        bool isEnabled() const { return m_enabled; }
+
         // Physics management
         void enablePhysics(PhysicsBodyType bodyType = PhysicsBodyType::Dynamic);
         void disablePhysics();
@@ -78,6 +82,9 @@ namespace dx3d
     protected:
         Transform m_transform; // Kept for backward compatibility
         Entity m_entity;
+        bool m_enabled = true;
+        bool m_hadPhysicsBeforeDisable = false;
+        PhysicsBodyType m_previousBodyType = PhysicsBodyType::Dynamic;
 
     private:
         static EntityID s_nextEntityID;

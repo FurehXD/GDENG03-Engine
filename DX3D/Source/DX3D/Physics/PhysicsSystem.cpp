@@ -146,6 +146,7 @@ void PhysicsSystem::update(float deltaTime)
 
     auto* physicsArray = componentManager.getComponentArray<PhysicsComponent>();
 
+
     if (physicsArray)
     {
         // FIX: Use range-based for loop with non-const references

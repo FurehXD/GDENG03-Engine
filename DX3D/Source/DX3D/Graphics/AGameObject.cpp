@@ -348,3 +348,45 @@ Matrix4x4 AGameObject::Transform::getWorldMatrix() const
     Matrix4x4 result = scaleMatrix * rotationZ * rotationY * rotationX * translationMatrix;
     return result;
 }
+
+void AGameObject::setEnabled(bool enabled)
+{
+    if (m_enabled == enabled)
+        return;
+
+    m_enabled = enabled;
+
+    if (!enabled)
+    {
+        // Remember if we had physics before disabling
+        m_hadPhysicsBeforeDisable = hasPhysics();
+        if (m_hadPhysicsBeforeDisable)
+        {
+            // Store the body type before disabling
+            auto& componentManager = ComponentManager::getInstance();
+            auto* physicsComp = componentManager.getComponent<PhysicsComponent>(m_entity.getID());
+            if (physicsComp)
+            {
+                m_previousBodyType = physicsComp->bodyType;
+            }
+            disablePhysics();
+        }
+    }
+    else
+    {
+        // Re-enable physics if we had it before
+        if (m_hadPhysicsBeforeDisable)
+        {
+            enablePhysics(m_previousBodyType);
+
+            // Restore physics properties if needed
+            auto& componentManager = ComponentManager::getInstance();
+            auto* physicsComp = componentManager.getComponent<PhysicsComponent>(m_entity.getID());
+            if (physicsComp)
+            {
+                // The physics properties should be restored from the component
+                // The enablePhysics method should handle this
+            }
+        }
+    }
+}

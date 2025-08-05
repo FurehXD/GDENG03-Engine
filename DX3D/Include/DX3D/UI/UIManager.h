@@ -2,6 +2,7 @@
 #include <DX3D/UI/UIState.h>
 #include <memory>
 #include <functional>
+#include "DX3D/UI/Elements/UIElement.h"
 
 namespace dx3d
 {
@@ -33,6 +34,8 @@ namespace dx3d
 
             std::function<std::vector<std::string>()> getSavedSceneFiles;
             std::function<void(const std::string&)> onLoadScene;
+
+            ID3D11Device* d3dDevice;
         };
 
         struct SpawnCallbacks
@@ -58,9 +61,14 @@ namespace dx3d
         UIController& getController() { return *m_controller; }
         const UIState& getState() const { return m_state; }
 
+        void AddTextElement(const std::string& text);
+        void AddImageElement(const char* imagePath);
+        void AddButtonElement(const std::string& label, std::function<void()> onClick);
+
     private:
         void applyLayout();
         void renderLoadScenePopup();
+        void renderDynamicElements();
 
     private:
         UIState m_state;
@@ -77,5 +85,9 @@ namespace dx3d
         std::vector<std::string> m_sceneFiles;
         std::function<std::vector<std::string>()> m_getSceneFilesCallback;
         std::function<void(const std::string&)> m_loadSceneCallback;
+
+        // UI Elements
+        std::vector<std::unique_ptr<UIElement>> m_dynamicElements;
+        ID3D11Device* m_d3dDevice = nullptr;
     };
 }

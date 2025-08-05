@@ -79,6 +79,13 @@ dx3d::Game::Game(const GameDesc& desc) :
         onSceneStateChanged(oldState, newState);
         });
 
+    auto& renderSystem = m_graphicsEngine->getRenderSystem();
+    auto resourceDesc = renderSystem.getGraphicsResourceDesc();
+    auto& deviceContext = renderSystem.getDeviceContext();
+    auto d3dContext = deviceContext.getDeviceContext();
+    ID3D11Device* curDevice = nullptr;
+    d3dContext->GetDevice(&curDevice);
+
     UIManager::Dependencies uiDeps{
         m_logger,
         *m_undoRedoSystem,
@@ -88,7 +95,9 @@ dx3d::Game::Game(const GameDesc& desc) :
         m_gameObjects,
 
         [this]() { return this->getSavedSceneFiles(); },
-        [this](const std::string& filename) { this->loadScene(filename); }
+        [this](const std::string& filename) { this->loadScene(filename); },
+
+        curDevice
     };
     m_uiManager = std::make_unique<UIManager>(uiDeps);
 

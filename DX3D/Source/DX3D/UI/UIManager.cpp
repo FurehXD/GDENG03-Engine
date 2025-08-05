@@ -6,6 +6,9 @@
 #include <DX3D/UI/Panels/InspectorUI.h>
 #include <DX3D/UI/Panels/DebugConsoleUI.h>
 #include <DX3D/UI/Panels/ViewportUI.h>
+#include <DX3D/UI/Elements/ButtonElement.h>
+#include <DX3D/UI/Elements/ImageElement.h>
+#include <DX3D/UI/Elements/TextElement.h>
 #include <imgui.h>
 
 using namespace dx3d;
@@ -51,6 +54,8 @@ UIManager::UIManager(const Dependencies& deps)
 
     m_debugConsole = std::make_unique<DebugConsoleUI>(deps.logger);
     m_viewport = std::make_unique<ViewportUI>(deps.viewportManager);
+
+    m_d3dDevice = deps.d3dDevice;
 }
 
 UIManager::~UIManager() = default;
@@ -90,6 +95,8 @@ void UIManager::render(float deltaTime, const SpawnCallbacks& callbacks)
 
     // Render our new popup if it's supposed to be open
     renderLoadScenePopup();
+
+    renderDynamicElements();
 }
 
 void UIManager::applyLayout()
@@ -135,4 +142,35 @@ void UIManager::renderLoadScenePopup()
         }
         ImGui::EndPopup();
     }
+}
+
+void UIManager::AddTextElement(const std::string& text)
+{
+    // CORRECT: TextElement only needs the text string
+    m_dynamicElements.push_back(std::make_unique<TextElement>(text));
+}
+
+void UIManager::AddImageElement(const char* imagePath)
+{
+    // CORRECT: The device comes first, then the path
+    m_dynamicElements.push_back(std::make_unique<ImageElement>(m_d3dDevice, imagePath));
+}
+
+void UIManager::AddButtonElement(const std::string& label, std::function<void()> onClick)
+{
+    // CORRECT: ButtonElement only needs the label and the click function
+    m_dynamicElements.push_back(std::make_unique<ButtonElement>(label, onClick));
+}
+
+void UIManager::renderDynamicElements()
+{
+    // Create a new window to hold the dynamic elements
+    ImGui::Begin("Dynamic UI Elements");
+
+    for (const auto& element : m_dynamicElements)
+    {
+        element->Render();
+    }
+
+    ImGui::End();
 }

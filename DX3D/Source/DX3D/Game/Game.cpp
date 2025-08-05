@@ -138,6 +138,22 @@ void dx3d::Game::createRenderingResources()
     ID3D11Device* device = nullptr;
     d3dContext->GetDevice(&device);
 
+    UIManager::Dependencies uiDeps{
+        m_logger,
+        *m_undoRedoSystem,
+        *m_selectionSystem,
+        *m_sceneStateManager,
+        *m_viewportManager,
+        m_gameObjects,
+
+        [this]() { return this->getSavedSceneFiles(); },
+        [this](const std::string& filename) { this->loadScene(filename); },
+
+        // Pass the device pointer here
+        device
+    };
+
+    m_uiManager = std::make_unique<UIManager>(uiDeps);
     auto& componentManager = ComponentManager::getInstance();
     componentManager.registerComponent<TransformComponent>();
     componentManager.registerComponent<PhysicsComponent>();
@@ -238,6 +254,14 @@ void dx3d::Game::createRenderingResources()
     m_gameObjects.push_back(m_gameCamera);
 
     DX3DLogInfo("Empty scene initialized - use GameObjects menu to add objects!");
+
+    m_uiManager->AddTextElement("Welcome to the DX3D Engine!");
+    m_uiManager->AddButtonElement("Click Me!", []() {
+        // This lambda will be executed when the button is clicked
+        });
+    // m_uiManager->AddImageElement("path/to/your/image.png");
+
+    DX3DLogInfo("UI elements added.");
 }
 
 void dx3d::Game::processInput(float deltaTime)

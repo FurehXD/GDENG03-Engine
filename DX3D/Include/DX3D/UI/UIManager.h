@@ -3,6 +3,7 @@
 #include <memory>
 #include <functional>
 #include "DX3D/UI/Elements/UIElement.h"
+#include <d3d11.h>
 
 namespace dx3d
 {

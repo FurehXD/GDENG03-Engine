@@ -175,6 +175,9 @@
     <ClCompile Include="DX3D\Source\DX3D\Particles\ParticleEmitter.cpp" />
     <ClCompile Include="DX3D\Source\DX3D\Particles\ParticleSystem.cpp" />
     <ClCompile Include="DX3D\Source\DX3D\Scene\SceneStateManager.cpp" />
+    <ClCompile Include="DX3D\Source\DX3D\UI\Elements\ButtonElement.cpp" />
+    <ClCompile Include="DX3D\Source\DX3D\UI\Elements\ImageElement.cpp" />
+    <ClCompile Include="DX3D\Source\DX3D\UI\Elements\TextElement.cpp" />
     <ClCompile Include="DX3D\Source\DX3D\UI\Panels\DebugConsoleUI.cpp" />
     <ClCompile Include="DX3D\Source\DX3D\UI\Panels\InspectorUI.cpp" />
     <ClCompile Include="DX3D\Source\DX3D\UI\Panels\MainMenuBarUI.cpp" />

@@ -146,25 +146,21 @@ void UIManager::renderLoadScenePopup()
 
 void UIManager::AddTextElement(const std::string& text)
 {
-    // CORRECT: TextElement only needs the text string
     m_dynamicElements.push_back(std::make_unique<TextElement>(text));
 }
 
 void UIManager::AddImageElement(const char* imagePath)
 {
-    // CORRECT: The device comes first, then the path
     m_dynamicElements.push_back(std::make_unique<ImageElement>(m_d3dDevice, imagePath));
 }
 
 void UIManager::AddButtonElement(const std::string& label, std::function<void()> onClick)
 {
-    // CORRECT: ButtonElement only needs the label and the click function
     m_dynamicElements.push_back(std::make_unique<ButtonElement>(label, onClick));
 }
 
 void UIManager::renderDynamicElements()
 {
-    // Create a new window to hold the dynamic elements
     ImGui::Begin("Dynamic UI Elements");
 
     for (const auto& element : m_dynamicElements)
